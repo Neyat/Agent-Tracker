@@ -1,0 +1,2322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Status Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#f4f6fa; --card:#fff; --text:#1a2332; --muted:#6b7280; --subtle:#9ca3af;
+    --border:#e5e7eb; --primary:#2563eb; --primary-dark:#1d4ed8;
+    --office:#10b981; --wfh:#3b82f6;
+    --accom:#f59e0b; --accom-early:#8b5cf6; --accom-late:#ec4899; --accom-office:#06b6d4;
+    --extra:#14b8a6; --pto:#ef4444; --jiffy:#f97316; --unpaid:#a855f7; --off:#9ca3af;
+    --warn:#b45309; --danger:#991b1b;
+    --good:#16a34a; --ok:#ca8a04; --bad:#dc2626;
+    --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.5; }
+  header { background:white; border-bottom:1px solid var(--border); padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    position:sticky; top:0; z-index:10; }
+  header h1 { margin:0; font-size:20px; font-weight:600; }
+  .container { max-width:1500px; margin:0 auto; padding:18px 24px; }
+  .tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:18px;
+    overflow-x:auto; }
+  .tab { padding:10px 14px; cursor:pointer; font-size:14px; font-weight:500;
+    color:var(--muted); border-bottom:2px solid transparent; user-select:none; white-space:nowrap; }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+  .tab-badge { background:var(--pto); color:white; padding:1px 7px; border-radius:10px;
+    font-size:11px; font-weight:700; margin-left:4px; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;
+    background:white; padding:12px 16px; border-radius:10px; box-shadow:var(--shadow); }
+  .controls label { display:flex; align-items:center; gap:6px;
+    font-size:13px; color:var(--muted); font-weight:500; }
+  input, select, textarea { padding:7px 10px; border:1px solid var(--border); border-radius:6px;
+    font-size:14px; font-family:inherit; background:white; }
+  textarea { resize:vertical; min-height:60px; width:100%; }
+  button { padding:7px 14px; border:none; border-radius:6px; font-size:13px; font-weight:500;
+    cursor:pointer; font-family:inherit; transition:background .15s; }
+  .btn-primary { background:var(--primary); color:white; }
+  .btn-primary:hover { background:var(--primary-dark); }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+  .btn-ghost:hover { background:#f9fafb; color:var(--text); }
+  .btn-ghost.active { background:var(--primary); color:white; border-color:var(--primary); }
+  .btn-danger { background:#fef2f2; color:var(--pto); border:1px solid #fecaca; }
+  .btn-approve { padding:7px 14px; background:#dcfce7; color:#166534;
+    border:1px solid #86efac; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn-approve:hover { background:#bbf7d0; }
+  .toggle-group { display:inline-flex; gap:0; background:#f3f4f6; border-radius:6px; padding:2px; }
+  .toggle-group button { padding:5px 12px; font-size:12px; background:transparent;
+    color:var(--muted); border:none; border-radius:4px; }
+  .toggle-group button.active { background:white; color:var(--text); box-shadow:var(--shadow); font-weight:600; }
+
+  .summary { display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr));
+    gap:8px; margin-bottom:14px; }
+  .stat { background:var(--card); padding:11px 14px; border-radius:8px;
+    box-shadow:var(--shadow); border-left:3px solid; }
+  .stat .label { font-size:10px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:0.5px; font-weight:600; }
+  .stat .value { font-size:22px; font-weight:600; margin-top:1px; line-height:1.1; }
+  .stat .breakdown { margin-top:4px; font-size:10px; color:var(--muted); line-height:1.3; }
+  .stat .breakdown b { color:var(--text); font-weight:600; }
+  .stat.office { border-color:var(--office); }
+  .stat.wfh { border-color:var(--wfh); }
+  .stat.accom { border-color:var(--accom); }
+  .stat.extra { border-color:var(--extra); }
+  .stat.pto { border-color:var(--pto); }
+  .stat.jiffy { border-color:var(--jiffy); }
+  .stat.unpaid { border-color:var(--unpaid); }
+  .stat.off { border-color:var(--off); }
+  .stat.coverage { border-color:var(--good); }
+  .stat.coverage.amber { border-color:var(--ok); }
+  .stat.coverage.red { border-color:var(--bad); }
+
+  .heatmap-card { background:white; border-radius:10px; box-shadow:var(--shadow);
+    padding:14px 18px; margin-bottom:14px; }
+  .heatmap-card h3 { margin:0 0 10px; font-size:14px; font-weight:600; display:flex;
+    justify-content:space-between; align-items:center; }
+  .heatmap-grid { display:grid; grid-template-columns:repeat(15, 1fr); gap:3px; font-size:11px; }
+  .heatmap-cell { padding:8px 2px; text-align:center; border-radius:4px; cursor:default; }
+  .hm-good { background:#dcfce7; color:#166534; }
+  .hm-ok { background:#fef3c7; color:#92400e; }
+  .hm-bad { background:#fee2e2; color:#991b1b; }
+  .hm-empty { background:#f3f4f6; color:var(--muted); }
+  .hm-label { font-size:10px; color:var(--muted); padding:4px 0; }
+
+  .group-section { background:var(--card); border-radius:10px; box-shadow:var(--shadow);
+    margin-bottom:12px; overflow:hidden; }
+  .group-header { padding:11px 16px; background:#f9fafb; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .group-header h3 { margin:0; font-size:14px; font-weight:600; }
+  .group-meta { font-size:11px; color:var(--muted); }
+  .group-counts { display:flex; gap:6px; flex-wrap:wrap; font-size:11px; }
+  .count-chip { padding:2px 8px; border-radius:12px; font-weight:600;
+    background:#f3f4f6; color:var(--muted); }
+
+  .agent-row { display:grid;
+    grid-template-columns:minmax(200px, 1.2fr) 130px 80px 1fr;
+    align-items:center; gap:10px; padding:9px 16px;
+    border-bottom:1px solid #f3f4f6; }
+  .agent-row:last-child { border-bottom:none; }
+  .agent-row:hover { background:#fafbfc; }
+  .agent-row.is-leave { background:#fef2f2; }
+  .agent-row.is-accom { background:#fffbeb; }
+  .agent-row.is-extra { background:#f0fdfa; }
+  .agent-row.is-off { opacity:0.55; }
+  .agent-info .name { font-weight:600; font-size:14px; display:flex;
+    align-items:center; gap:7px; flex-wrap:wrap; }
+  .agent-info .sub { font-size:11px; color:var(--muted); margin-top:1px; }
+  .counter-chip { font-size:10px; padding:1px 6px; border-radius:10px;
+    background:#f3f4f6; color:var(--muted); font-weight:600; }
+  .counter-chip.warn { background:#fef3c7; color:var(--warn); }
+  .counter-chip.bank { background:#ccfbf1; color:#0f766e; }
+  .status-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+    border-radius:999px; font-size:11px; font-weight:600; color:white; white-space:nowrap;
+    width:fit-content; }
+  .status-pill.office { background:var(--office); }
+  .status-pill.wfh { background:var(--wfh); }
+  .status-pill.accom_wfh { background:var(--accom); }
+  .status-pill.accom_early { background:var(--accom-early); }
+  .status-pill.accom_late { background:var(--accom-late); }
+  .status-pill.accom_office_change { background:var(--accom-office); }
+  .status-pill.extra_hours_wfh { background:var(--extra); }
+  .status-pill.pto { background:var(--pto); }
+  .status-pill.jiffy_day { background:var(--jiffy); }
+  .status-pill.unpaid { background:var(--unpaid); }
+  .status-pill.off { background:var(--off); }
+  .override-tag { font-size:10px; font-weight:700; text-transform:uppercase;
+    padding:2px 6px; border-radius:4px; background:#f3f4f6; color:var(--muted); }
+  .status-buttons { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+  .status-btn { padding:5px 9px; font-size:11px; font-weight:600; border:1px solid var(--border);
+    background:white; color:var(--muted); border-radius:5px; cursor:pointer; }
+  .status-btn:hover { background:#f3f4f6; }
+  .status-btn.active.accom_wfh { background:var(--accom); color:white; border-color:var(--accom); }
+  .status-btn.active.accom_early { background:var(--accom-early); color:white; border-color:var(--accom-early); }
+  .status-btn.active.accom_late { background:var(--accom-late); color:white; border-color:var(--accom-late); }
+  .status-btn.active.extra_hours_wfh { background:var(--extra); color:white; border-color:var(--extra); }
+  .status-btn.active.pto { background:var(--pto); color:white; border-color:var(--pto); }
+  .status-btn.active.jiffy_day { background:var(--jiffy); color:white; border-color:var(--jiffy); }
+  .status-btn.active.unpaid { background:var(--unpaid); color:white; border-color:var(--unpaid); }
+  .status-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .reset-btn { padding:5px 8px; font-size:11px; background:transparent; color:var(--subtle);
+    border:1px dashed var(--border); border-radius:5px; cursor:pointer; }
+  .reset-btn:hover { color:var(--text); border-color:var(--muted); }
+
+  /* Request cards */
+  .request-card { background:white; border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); }
+  .request-card.type-ot_claim { border-left:4px solid var(--extra); }
+  .request-card.type-extra_hours_wfh { border-left:4px solid var(--extra); }
+  .request-card.type-accom_wfh,
+  .request-card.type-accom_early,
+  .request-card.type-accom_late,
+  .request-card.type-accom_office_change { border-left:4px solid var(--accom); }
+  .req-row { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+  .req-info { flex:1; min-width:0; }
+  .req-name { font-weight:600; font-size:15px; }
+  .req-meta { font-size:12px; color:var(--muted); }
+  .req-type-row { display:flex; align-items:center; gap:8px; margin:6px 0 8px; flex-wrap:wrap; }
+  .req-pill { padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; color:white; }
+  .req-pill.accom_wfh, .req-pill.accom_early, .req-pill.accom_late, .req-pill.accom_office_change { background:var(--accom); }
+  .req-pill.ot_claim, .req-pill.extra_hours_wfh { background:var(--extra); }
+  .req-warn { padding:8px 11px; background:#fef3c7; border:1px solid #fde68a;
+    border-radius:6px; font-size:12px; color:var(--warn); margin-bottom:8px; }
+  .req-warn.danger { background:#fee2e2; border-color:#fecaca; color:var(--danger); }
+  .req-warn.ok { background:#ccfbf1; border-color:#5eead4; color:#0f766e; }
+  .req-actions { display:flex; flex-direction:column; gap:6px; min-width:100px; }
+
+  .req-history { margin-top:24px; }
+  .req-history h3 { font-size:13px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:0.5px; font-weight:600; margin:0 0 10px; }
+
+  /* Tables */
+  .report-card { background:white; border-radius:10px; box-shadow:var(--shadow);
+    padding:16px 18px; margin-bottom:12px; }
+  .report-card h2 { margin:0 0 12px; font-size:15px; font-weight:600; }
+  table.report { width:100%; border-collapse:collapse; font-size:13px; }
+  table.report th, table.report td { padding:8px 10px; border-bottom:1px solid var(--border);
+    text-align:left; }
+  table.report th { background:#f9fafb; font-weight:600; font-size:11px;
+    color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; padding:2px 7px; border-radius:999px;
+    font-size:11px; font-weight:600; }
+  .pill.warn { background:#fef3c7; color:var(--warn); }
+  .pill.danger { background:#fee2e2; color:var(--pto); }
+  .pill.ok { background:#dcfce7; color:#166534; }
+  .pill.bank { background:#ccfbf1; color:#0f766e; }
+
+  /* Charts */
+  .chart-container { position:relative; height:300px; margin-top:8px; }
+  .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:900px) { .chart-row { grid-template-columns:1fr; } }
+
+  /* Modal */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(15, 23, 42, 0.5);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:16px; }
+  .modal-backdrop.show { display:flex; }
+  .modal { background:white; border-radius:12px; max-width:700px; width:100%;
+    max-height:90vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  .modal-head { padding:14px 22px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+    position:sticky; top:0; background:white; z-index:1; }
+  .modal-head h2 { margin:0; font-size:16px; }
+  .modal-body { padding:18px 22px; }
+  .modal-close { background:transparent; border:none; cursor:pointer;
+    font-size:24px; color:var(--muted); line-height:1; padding:0 6px; }
+  .form-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .form-row > * { flex:1; min-width:140px; }
+  .form-label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; font-weight:500; }
+
+  .schedule-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .schedule-table th, .schedule-table td { padding:8px 6px;
+    border-bottom:1px solid var(--border); text-align:center; }
+  .schedule-table th { background:#f9fafb; font-weight:600; font-size:11px;
+    color:var(--muted); text-transform:uppercase; }
+  .schedule-table td.name { text-align:left; padding-left:12px; }
+  .day-cell { cursor:pointer; user-select:none; border-radius:4px; padding:6px 8px;
+    font-size:11px; font-weight:600; display:inline-block; min-width:56px; }
+  .day-cell.office { background:#ecfdf5; color:#065f46; }
+  .day-cell.wfh { background:#eff6ff; color:#1e40af; }
+  .day-cell.off { background:#f3f4f6; color:var(--off); }
+
+  .empty { text-align:center; padding:32px 16px; color:var(--muted); font-size:13px; }
+
+  /* Schedule view — staffing heatmap */
+  .sched-wrap { background:transparent; padding:0; overflow-x:auto; }
+  .staff-heatmap-wrap { background:white; border-radius:10px; box-shadow:var(--shadow);
+    padding:18px 20px; }
+  .staff-heatmap-title { font-size:14px; font-weight:600; margin-bottom:14px;
+    color:var(--text); display:flex; align-items:center; gap:8px; }
+  .staff-heatmap-title .legend { margin-left:auto; display:flex; align-items:center; gap:6px;
+    font-size:11px; color:var(--muted); font-weight:400; }
+  .staff-heatmap-title .legend .scale { display:inline-flex; height:12px; border-radius:3px; overflow:hidden; }
+  .staff-heatmap-title .legend .scale span { width:18px; height:12px; }
+  .staff-heatmap-overflow { overflow-x:auto; }
+  .staff-heatmap { border-collapse:collapse; font-size:13px; min-width:100%; }
+  .staff-heatmap th { padding:10px 8px; background:#f9fafb; font-weight:600;
+    border-bottom:1px solid var(--border); }
+  .staff-heatmap th.time-col { text-align:left; padding-left:14px; color:var(--muted);
+    text-transform:uppercase; font-size:11px; letter-spacing:0.4px; min-width:90px; }
+  .staff-heatmap th.day-col { text-align:center; color:var(--text); font-size:13px;
+    font-weight:600; min-width:74px; }
+  .staff-heatmap th.day-col.today { color:var(--primary); background:#eff6ff; }
+  .staff-heatmap th.day-col .date-sub { display:block; font-size:11px; color:var(--muted);
+    font-weight:400; margin-top:2px; }
+  .staff-heatmap td { padding:8px 6px; text-align:center; border-bottom:1px solid #f3f4f6; }
+  .staff-heatmap td.time-col { font-weight:600; color:var(--muted); text-align:left;
+    padding-left:14px; font-variant-numeric:tabular-nums; background:white;
+    position:sticky; left:0; border-right:1px solid var(--border); white-space:nowrap;
+    z-index:1; }
+  .staff-heatmap td.staff-cell { font-weight:700; cursor:pointer; transition:transform .1s;
+    font-variant-numeric:tabular-nums; }
+  .staff-heatmap td.staff-cell:hover { outline:2px solid var(--primary); position:relative; z-index:2; }
+  .staff-heatmap td.staff-cell.empty { color:var(--subtle); cursor:default; background:#fafbfc; }
+  .staff-heatmap tr.boundary td { border-top:2px solid var(--border); }
+
+  /* Schedule day-cards (separate from heatmap) */
+  .sched-cards { display:flex; gap:12px; padding-bottom:8px; }
+  .sched-cards.period-day .day-card { flex:0 0 100%; max-width:720px; margin:0 auto; }
+  .sched-cards.period-week { flex-wrap:wrap; }
+  .sched-cards.period-week .day-card { flex:1 1 calc((100% - 84px) / 7); min-width:200px; max-width:none; }
+  .sched-cards.period-month .day-card { flex:0 0 220px; }
+  .day-card { background:white; border-radius:10px; box-shadow:var(--shadow);
+    padding:12px 14px; display:flex; flex-direction:column; }
+  .day-card.today { box-shadow:0 0 0 2px var(--primary), var(--shadow); }
+  .day-card.weekend { background:#f9fafb; opacity:0.85; }
+  .day-card-head { display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border); gap:6px; }
+  .day-card-date { font-weight:600; font-size:13px; cursor:pointer; }
+  .day-card-cov { font-size:12px; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; }
+  .day-card-cov.cov-good { background:#dcfce7; color:#166534; }
+  .day-card-cov.cov-ok { background:#fef3c7; color:#92400e; }
+  .day-card-cov.cov-bad { background:#fee2e2; color:#991b1b; }
+  .day-card-summary { font-size:11px; color:var(--muted); margin-bottom:8px;
+    padding:6px 8px; background:#f9fafb; border-radius:6px; }
+  .day-card-summary b { color:var(--text); font-weight:600; }
+  .status-section { margin-bottom:6px; }
+  .status-section-head { display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:3px; gap:6px; }
+  .status-section-head .label { display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:600; color:var(--text); }
+  .status-section-head .swatch { display:inline-block; width:8px; height:8px; border-radius:50%; }
+  .status-section-head .swatch.s-office { background:var(--office); }
+  .status-section-head .swatch.s-wfh { background:var(--wfh); }
+  .status-section-head .swatch.s-accom { background:var(--accom); }
+  .status-section-head .swatch.s-extra { background:var(--extra); }
+  .status-section-head .swatch.s-pto { background:var(--pto); }
+  .status-section-head .swatch.s-jiffy { background:var(--jiffy); }
+  .status-section-head .swatch.s-unpaid { background:var(--unpaid); }
+  .status-section-head .swatch.s-off { background:var(--off); }
+  .status-section-head .count { font-size:11px; font-weight:700; color:var(--muted); }
+  .agent-names { display:flex; flex-direction:column; }
+  .agent-name-row { font-size:12px; padding:2px 6px; cursor:pointer; border-radius:3px; }
+  .agent-name-row:hover { background:#f3f4f6; }
+  .agent-name-row .tag { font-size:10px; color:var(--muted); margin-left:4px; }
+  .day-card-empty { color:var(--muted); font-size:12px; padding:10px; text-align:center; }
+
+  /* Time Off page callout on Daily Status */
+  .timeoff-callout { background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af;
+    padding:9px 14px; border-radius:8px; font-size:13px; margin-bottom:14px;
+    display:flex; align-items:center; gap:10px; }
+  .timeoff-callout a { color:#1e40af; font-weight:600; cursor:pointer; text-decoration:underline; }
+  .config-warn { background:#fef3c7; border:1px solid #fde68a; color:var(--warn);
+    padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13px; }
+  details { background:white; border-radius:8px; padding:10px 14px;
+    margin-bottom:8px; box-shadow:var(--shadow); }
+  details summary { cursor:pointer; font-weight:600; font-size:13px; }
+  .leave-list-item { display:flex; justify-content:space-between; align-items:center;
+    padding:9px 12px; background:#f9fafb; border-radius:6px; margin-bottom:6px; font-size:13px; gap:10px; }
+
+  @media (max-width: 800px) {
+    .agent-row { grid-template-columns:1fr; gap:6px; padding:11px 14px; }
+    .status-buttons { justify-content:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Agent Status Tracker</h1>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <button class="btn-ghost" id="settingsBtn">Settings</button>
+    <button class="btn-ghost" id="editScheduleBtn">Static Schedule</button>
+    <button class="btn-ghost" id="exportBtn">Export</button>
+    <button class="btn-ghost" id="importBtn">Import</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <div class="tab active" data-tab="daily">Daily Status</div>
+    <div class="tab" data-tab="monthly">Schedule</div>
+    <div class="tab" data-tab="coverage">Coverage Heatmap</div>
+    <div class="tab" data-tab="pending">Pending Requests <span id="pendingBadge" class="tab-badge" style="display:none">0</span></div>
+    <div class="tab" data-tab="leave">Time Off</div>
+    <div class="tab" data-tab="usage">Accommodation Usage</div>
+    <div class="tab" data-tab="bank">Extra Hours Bank</div>
+    <div class="tab" data-tab="trends">Trends</div>
+  </div>
+
+  <!-- ======== DAILY STATUS ======== -->
+  <div class="tab-panel active" id="tab-daily">
+    <div class="controls">
+      <label>Date: <input type="date" id="datePicker" /></label>
+      <button class="btn-ghost" id="todayBtn">Today</button>
+      <span style="font-size:13px; color:var(--muted)" id="dateDisplay"></span>
+      <span style="flex:1"></span>
+      <label>Search: <input type="text" id="searchInput" placeholder="Filter by name…" style="min-width:160px" /></label>
+      <label>Supervisor:
+        <select id="supervisorFilter"><option value="">All</option></select>
+      </label>
+    </div>
+
+    <div class="controls">
+      <label style="font-weight:600; color:var(--text)">View:</label>
+      <div class="toggle-group" id="viewToggle">
+        <button data-view="all" class="active">All</button>
+        <button data-view="office">In Office only</button>
+        <button data-view="wfh">WFH only</button>
+      </div>
+      <label style="font-weight:600; color:var(--text); margin-left:14px">Group by:</label>
+      <div class="toggle-group" id="groupToggle">
+        <button data-group="team" class="active">Team / shift</button>
+        <button data-group="supervisor">Supervisor</button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="btn-ghost" id="clearOverridesBtn">Clear overrides for this day</button>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="heatmap-card">
+      <h3>Hourly headcount &amp; coverage <span style="font-size:11px; color:var(--muted); font-weight:400">— green ≥95% · amber 85–94% · red &lt;85%</span></h3>
+      <div class="heatmap-grid" id="heatmap"></div>
+    </div>
+
+    <div id="dailyContainer"></div>
+  </div>
+
+  <!-- ======== SCHEDULE VIEW (Day / Week / Month) ======== -->
+  <div class="tab-panel" id="tab-monthly">
+    <div class="controls">
+      <label style="font-weight:600; color:var(--text)">View:</label>
+      <div class="toggle-group" id="periodToggle">
+        <button data-period="day">Day</button>
+        <button data-period="week">Week</button>
+        <button data-period="month" class="active">Month</button>
+      </div>
+      <button class="btn-ghost" id="schedPrev">←</button>
+      <label>Start: <input type="date" id="schedDate" /></label>
+      <button class="btn-ghost" id="schedNext">→</button>
+      <button class="btn-ghost" id="schedToday">Today</button>
+      <span style="flex:1"></span>
+      <label>Search: <input type="text" id="schedSearch" placeholder="Filter by name…" /></label>
+      <label>Supervisor:
+        <select id="schedSupervisor"><option value="">All</option></select>
+      </label>
+      <label>Sort:
+        <select id="schedSort">
+          <option value="team">By team, then name</option>
+          <option value="name">By name (A–Z)</option>
+          <option value="supervisor">By supervisor, then name</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="sched-wrap">
+      <div id="schedTable"></div>
+    </div>
+  </div>
+
+  <!-- ======== COVERAGE HEATMAP (separate page) ======== -->
+  <div class="tab-panel" id="tab-coverage">
+    <div class="controls">
+      <label style="font-weight:600; color:var(--text)">View:</label>
+      <div class="toggle-group" id="covPeriodToggle">
+        <button data-period="day">Day</button>
+        <button data-period="week" class="active">Week</button>
+        <button data-period="month">Month</button>
+      </div>
+      <button class="btn-ghost" id="covPrev">←</button>
+      <label>Start: <input type="date" id="covDate" /></label>
+      <button class="btn-ghost" id="covNext">→</button>
+      <button class="btn-ghost" id="covToday">Today</button>
+      <span style="flex:1"></span>
+      <label>Supervisor:
+        <select id="covSupervisor"><option value="">All</option></select>
+      </label>
+    </div>
+    <div id="covContainer"></div>
+  </div>
+
+  <!-- ======== PENDING REQUESTS ======== -->
+  <div class="tab-panel" id="tab-pending">
+    <div id="pendingConfigWarn" class="config-warn" style="display:none">
+      <strong>Setup required:</strong> Supabase keys haven't been added. See SETUP.md.
+    </div>
+    <div class="controls">
+      <button class="btn-ghost" id="refreshPendingBtn">Refresh</button>
+      <span id="pendingStatus" style="font-size:13px; color:var(--muted)"></span>
+      <span style="flex:1"></span>
+      <label>Show:
+        <select id="pendingFilter">
+          <option value="pending" selected>Pending only</option>
+          <option value="all">Pending + recent decisions</option>
+        </select>
+      </label>
+      <label>Supervisor:
+        <select id="pendingSupervisor"><option value="">All teams</option></select>
+      </label>
+    </div>
+    <div id="pendingList"></div>
+    <div class="req-history" id="pendingHistory"></div>
+  </div>
+
+  <!-- ======== BULK LEAVE ENTRY ======== -->
+  <div class="tab-panel" id="tab-leave">
+    <div class="report-card">
+      <h2>Enter PTO / Jiffy Day / Unpaid Leave</h2>
+      <p style="font-size:13px; color:var(--muted); margin-top:0">
+        These come from HR, not from the request flow. Enter them here and they'll show up on the Daily Status roster for the date range. You can enter ahead of time (vacation next month) or same-day.
+      </p>
+      <div class="form-row">
+        <div>
+          <label class="form-label">Agent</label>
+          <select id="leaveAgent" style="width:100%"></select>
+        </div>
+        <div>
+          <label class="form-label">Type</label>
+          <select id="leaveType" style="width:100%">
+            <option value="pto">PTO</option>
+            <option value="jiffy_day">Jiffy Day</option>
+            <option value="unpaid">Unpaid Leave</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label class="form-label">Start date</label>
+          <input type="date" id="leaveStart" style="width:100%" />
+        </div>
+        <div>
+          <label class="form-label">End date</label>
+          <input type="date" id="leaveEnd" style="width:100%" />
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Note (optional)</label>
+        <textarea id="leaveNote" rows="2" placeholder="e.g. Vacation, family event…"></textarea>
+      </div>
+      <button class="btn-primary" id="addLeaveBtn" style="margin-top:10px">Add leave entry</button>
+    </div>
+
+    <div class="report-card">
+      <h2>Leave entries</h2>
+      <div class="controls" style="margin-bottom:10px; padding:8px 12px">
+        <label>Show:
+          <select id="leaveListFilter">
+            <option value="upcoming" selected>Upcoming &amp; current</option>
+            <option value="all">All</option>
+          </select>
+        </label>
+        <label>Type:
+          <select id="leaveTypeFilter">
+            <option value="">All types</option>
+            <option value="pto">PTO</option>
+            <option value="jiffy_day">Jiffy Day</option>
+            <option value="unpaid">Unpaid</option>
+          </select>
+        </label>
+      </div>
+      <div id="leaveList"></div>
+    </div>
+  </div>
+
+  <!-- ======== ACCOMMODATION USAGE ======== -->
+  <div class="tab-panel" id="tab-usage">
+    <div class="controls">
+      <label>From: <input type="date" id="usageFrom" /></label>
+      <label>To: <input type="date" id="usageTo" /></label>
+      <button class="btn-ghost" id="usageQuickWeek">This week</button>
+      <button class="btn-ghost" id="usageQuickMonth">This month</button>
+      <button class="btn-ghost" id="usageQuick90">Last 90 days</button>
+      <span style="flex:1"></span>
+      <label>Supervisor:
+        <select id="usageSupervisor"><option value="">All</option></select>
+      </label>
+      <button class="btn-ghost" id="exportUsageBtn">Download CSV</button>
+    </div>
+
+    <div class="report-card">
+      <h2>Accommodations per agent</h2>
+      <div class="chart-container"><canvas id="usageChart"></canvas></div>
+    </div>
+
+    <div class="report-card">
+      <h2>Detail</h2>
+      <table class="report" id="usageTable"></table>
+    </div>
+  </div>
+
+  <!-- ======== EXTRA HOURS BANK ======== -->
+  <div class="tab-panel" id="tab-bank">
+    <div class="config-warn" style="background:#ccfbf1; border-color:#5eead4; color:#0f766e">
+      <strong>How earning works now:</strong> agents submit OT claims through the request form (date worked, hours, purpose). When you approve in the Pending Requests tab, the credit is auto-banked here with a full audit trail. No manual entry needed for earned credits.
+    </div>
+    <div class="controls">
+      <label>Search: <input type="text" id="bankSearch" placeholder="Filter by name…" /></label>
+      <label>Supervisor:
+        <select id="bankSupervisor"><option value="">All</option></select>
+      </label>
+    </div>
+    <div class="report-card">
+      <table class="report" id="bankTable"></table>
+    </div>
+  </div>
+
+  <!-- ======== COVERAGE & TRENDS ======== -->
+  <div class="tab-panel" id="tab-trends">
+    <div class="controls">
+      <label>From: <input type="date" id="trendFrom" /></label>
+      <label>To: <input type="date" id="trendTo" /></label>
+      <button class="btn-ghost" id="trendQuick30">Last 30 days</button>
+      <button class="btn-ghost" id="trendQuick90">Last 90 days</button>
+    </div>
+
+    <div class="report-card">
+      <h2>Accommodations over time — top 5 users</h2>
+      <p style="font-size:12px; color:var(--muted); margin-top:0">Each line is one specific person, not a team total. Spot rising patterns or someone stacking accommodations week over week.</p>
+      <div class="chart-container" style="height:300px"><canvas id="trendAccomChart"></canvas></div>
+    </div>
+
+    <div class="report-card">
+      <h2>Top accommodation users</h2>
+      <p style="font-size:12px; color:var(--muted); margin-top:0">Specifically accommodation requests — does not include PTO, Jiffy Days, Unpaid leave (HR-approved), or Extra Hours WFH (earned reward).</p>
+      <table class="report" id="topUsersTable"></table>
+    </div>
+
+    <div class="report-card">
+      <h2>By supervisor — accommodation volume</h2>
+      <p style="font-size:12px; color:var(--muted); margin-top:0">Aggregated per supervisor so you can see whose team is generating most of the accommodation volume.</p>
+      <table class="report" id="supervisorBreakdownTable"></table>
+    </div>
+
+    <div class="report-card">
+      <h2>Hourly coverage % — by day of week</h2>
+      <p style="font-size:12px; color:var(--muted); margin-top:0">Average coverage % for each hour, grouped by day of week, over the selected range. Spot which hours regularly run short.</p>
+      <div class="chart-container" style="height:340px"><canvas id="trendCoverageChart"></canvas></div>
+    </div>
+
+    <div class="report-card">
+      <h2>Daily leave count over time</h2>
+      <div class="chart-container"><canvas id="trendLeaveChart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Schedule Editor Modal -->
+<div class="modal-backdrop" id="scheduleModal">
+  <div class="modal" style="max-width:800px">
+    <div class="modal-head">
+      <h2>Static Weekly Schedule</h2>
+      <button class="modal-close" data-close-modal>×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--muted); margin-top:0">
+        Click any day cell to cycle Office → WFH → Day Off. Sets the agent's default for that day of the week.
+      </p>
+      <table class="schedule-table" id="scheduleTable"></table>
+      <div class="form-row" style="margin-top:14px">
+        <input type="text" id="newAgentName" placeholder="New agent name" />
+        <input type="text" id="newAgentSupervisor" placeholder="Supervisor" />
+        <input type="text" id="newAgentTeam" placeholder="Team / shift" />
+        <button class="btn-primary" id="addAgentBtn">Add Agent</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <h2>Settings</h2>
+      <button class="modal-close" data-close-modal>×</button>
+    </div>
+    <div class="modal-body">
+      <label style="display:block; margin-bottom:14px">
+        <div class="form-label">Max Accommodation WFH per week per agent</div>
+        <input type="number" id="settingFlexLimit" min="0" max="7" style="width:80px" />
+      </label>
+      <label style="display:block; margin-bottom:14px">
+        <div class="form-label">Hours per Extra Hours WFH credit</div>
+        <input type="number" id="settingHoursPerCredit" min="1" max="40" style="width:80px" />
+        <div style="font-size:11px; color:var(--muted); margin-top:3px">Default: 4 hours = 1 credit</div>
+      </label>
+      <label style="display:block; margin-bottom:14px">
+        <div class="form-label">OT claim cutoff (days from date worked)</div>
+        <input type="number" id="settingOtCutoff" min="1" max="60" style="width:80px" />
+        <div style="font-size:11px; color:var(--muted); margin-top:3px">Default: 14 days. Claims past this auto-deny.</div>
+      </label>
+      <label style="display:block; margin-bottom:14px">
+        <div class="form-label">Coverage targets (%) — green / amber thresholds</div>
+        <div style="display:flex; gap:8px; align-items:center">
+          ≥ <input type="number" id="settingCovGreen" min="0" max="100" style="width:60px" />% green,
+          ≥ <input type="number" id="settingCovAmber" min="0" max="100" style="width:60px" />% amber, else red
+        </div>
+      </label>
+      <label style="display:block; margin-bottom:14px">
+        <div class="form-label">Week starts on</div>
+        <select id="settingWeekStart">
+          <option value="1">Monday</option>
+          <option value="0">Sunday</option>
+        </select>
+      </label>
+      <button class="btn-primary" id="saveSettings">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Coverage Detail Modal -->
+<div class="modal-backdrop" id="covDetailModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h2 id="covDetailTitle">Staffing detail</h2>
+      <button class="modal-close" data-close-modal>×</button>
+    </div>
+    <div class="modal-body" id="covDetailBody"></div>
+  </div>
+</div>
+
+<!-- Bank Detail Modal -->
+<div class="modal-backdrop" id="bankModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h2 id="bankModalTitle">Extra Hours Ledger</h2>
+      <button class="modal-close" data-close-modal>×</button>
+    </div>
+    <div class="modal-body" id="bankModalBody"></div>
+  </div>
+</div>
+
+<script type="module">
+  // ============================================
+  // === CONFIG — paste your Supabase keys here ===
+  const SUPABASE_URL = 'https://kjaoapqungpjeowwhegj.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_IXMlfV41W0hFhPAcZokZHA_bQoC8QPT';
+  // ============================================
+
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  const supabaseConfigured = !SUPABASE_URL.startsWith('PASTE_') && !SUPABASE_ANON_KEY.startsWith('PASTE_');
+  const supabase = supabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  const STORAGE_KEY = 'agentTracker.v4';
+  const STATUSES = {
+    office:               { label:'In Office',       short:'Office',      class:'office' },
+    wfh:                  { label:'WFH',             short:'WFH',         class:'wfh' },
+    accom_wfh:            { label:'Accom: WFH',      short:'Accom WFH',   class:'accom_wfh' },
+    accom_early:          { label:'Accom: Early',    short:'Accom Early', class:'accom_early' },
+    accom_late:           { label:'Accom: Late',     short:'Accom Late',  class:'accom_late' },
+    accom_office_change:  { label:'Office change',   short:'Office chg',  class:'accom_office_change' },
+    extra_hours_wfh:      { label:'Extra Hrs WFH',   short:'Extra Hrs',   class:'extra_hours_wfh' },
+    pto:                  { label:'PTO',             short:'PTO',         class:'pto' },
+    jiffy_day:            { label:'Jiffy Day',       short:'Jiffy',       class:'jiffy_day' },
+    unpaid:               { label:'Unpaid Leave',    short:'Unpaid',      class:'unpaid' },
+    off:                  { label:'Day Off',         short:'Off',         class:'off' },
+  };
+  const ACCOM_TYPES = ['accom_wfh','accom_early','accom_late','accom_office_change'];
+  const TEAM_ORDER = ["6:00–2:30", "8:00–4:30", "11:30–8:00 (A)", "11:30–8:00 (B)"];
+  // Shift hours mapping for headcount math (24-hour clock)
+  const SHIFT_HOURS = {
+    "6:00–2:30":      { start: 6,    end: 14.5 },
+    "8:00–4:30":      { start: 8,    end: 16.5 },
+    "11:30–8:00 (A)": { start: 11.5, end: 20 },
+    "11:30–8:00 (B)": { start: 11.5, end: 20 },
+  };
+
+  const SEED_AGENTS = [
+    { name:"Rosa Nuno", supervisor:"Angy", team:"6:00–2:30", schedule:{1:'office',2:'office',3:'office',4:'wfh',5:'wfh',6:'off',0:'off'}},
+    { name:"Cristie Avant", supervisor:"Angy", team:"6:00–2:30", schedule:{1:'wfh',2:'wfh',3:'office',4:'office',5:'office',6:'off',0:'off'}},
+    { name:"Amber Bailey", supervisor:"Angy", team:"6:00–2:30", schedule:{1:'office',2:'wfh',3:'wfh',4:'office',5:'office',6:'off',0:'off'}},
+    { name:"Sam De Castro", supervisor:"Angy", team:"6:00–2:30", schedule:{1:'office',2:'office',3:'wfh',4:'office',5:'wfh',6:'off',0:'off'}},
+    { name:"Rachel Dunlap", supervisor:"Angy", team:"6:00–2:30", schedule:{1:'off',2:'office',3:'office',4:'office',5:'wfh',6:'wfh',0:'off'}},
+    { name:"Chassidy Williams", supervisor:"Angy", team:"6:00–2:30", schedule:{1:'off',2:'office',3:'office',4:'wfh',5:'office',6:'wfh',0:'off'}},
+    { name:"Sarah Hajiali", supervisor:"Neyat", team:"6:00–2:30", schedule:{1:'office',2:'office',3:'office',4:'wfh',5:'off',6:'wfh',0:'off'}},
+    { name:"Morgan Lankford", supervisor:"Neyat", team:"6:00–2:30", schedule:{1:'office',2:'off',3:'office',4:'office',5:'wfh',6:'wfh',0:'off'}},
+    { name:"Unaisa Aslam", supervisor:"Neyat", team:"6:00–2:30", schedule:{1:'office',2:'office',3:'off',4:'wfh',5:'office',6:'wfh',0:'off'}},
+    { name:"Bo Repko", supervisor:"Neyat", team:"8:00–4:30", schedule:{1:'office',2:'office',3:'wfh',4:'office',5:'wfh',6:'off',0:'off'}},
+    { name:"Asia Campbell", supervisor:"Neyat", team:"8:00–4:30", schedule:{1:'wfh',2:'office',3:'office',4:'office',5:'off',6:'wfh',0:'off'}},
+    { name:"Preston Panetti", supervisor:"Neyat", team:"8:00–4:30", schedule:{1:'office',2:'office',3:'off',4:'wfh',5:'office',6:'wfh',0:'off'}},
+    { name:"Michael Scott Chavez", supervisor:"Katie", team:"8:00–4:30", schedule:{1:'wfh',2:'office',3:'office',4:'office',5:'off',6:'wfh',0:'off'}},
+    { name:"Andre Cordero", supervisor:"Katie", team:"8:00–4:30", schedule:{1:'off',2:'office',3:'office',4:'office',5:'wfh',6:'wfh',0:'off'}},
+    { name:"Damian Doubrava", supervisor:"Katie", team:"8:00–4:30", schedule:{1:'wfh',2:'off',3:'office',4:'office',5:'office',6:'wfh',0:'off'}},
+    { name:"Eri Dotson", supervisor:"Katie", team:"8:00–4:30", schedule:{1:'office',2:'office',3:'office',4:'wfh',5:'off',6:'wfh',0:'off'}},
+    { name:"Bicky Purewal", supervisor:"Lauren", team:"11:30–8:00 (A)", schedule:{1:'office',2:'office',3:'office',4:'wfh',5:'wfh',6:'off',0:'off'}},
+    { name:"Jessie Gregory", supervisor:"Lauren", team:"11:30–8:00 (A)", schedule:{1:'wfh',2:'office',3:'office',4:'office',5:'wfh',6:'off',0:'off'}},
+    { name:"Enrico Davis", supervisor:"Lauren", team:"11:30–8:00 (A)", schedule:{1:'office',2:'wfh',3:'wfh',4:'office',5:'office',6:'off',0:'off'}},
+    { name:"Blanca Berumen", supervisor:"Lauren", team:"11:30–8:00 (A)", schedule:{1:'office',2:'office',3:'wfh',4:'wfh',5:'office',6:'off',0:'off'}},
+    { name:"Salia Kibibi", supervisor:"Katie", team:"11:30–8:00 (A)", schedule:{1:'office',2:'wfh',3:'off',4:'office',5:'office',6:'wfh',0:'off'}},
+    { name:"Brianna Miller", supervisor:"Lauren", team:"11:30–8:00 (A)", schedule:{1:'wfh',2:'wfh',3:'wfh',4:'wfh',5:'wfh',6:'wfh',0:'off'}},
+    { name:"Jada Brown", supervisor:"Katie", team:"11:30–8:00 (A)", schedule:{1:'office',2:'office',3:'office',4:'wfh',5:'off',6:'wfh',0:'off'}},
+    { name:"Sarah Al-Obaidi", supervisor:"Ainsley", team:"11:30–8:00 (A)", schedule:{1:'off',2:'office',3:'office',4:'wfh',5:'office',6:'wfh',0:'off'}},
+    { name:"Ariashe Lowery", supervisor:"Ainsley", team:"11:30–8:00 (B)", schedule:{1:'office',2:'office',3:'office',4:'wfh',5:'wfh',6:'off',0:'off'}},
+    { name:"Jeremy Carrillo", supervisor:"Lauren", team:"11:30–8:00 (B)", schedule:{1:'wfh',2:'office',3:'office',4:'office',5:'wfh',6:'off',0:'off'}},
+    { name:"Taylor Amos", supervisor:"Ainsley", team:"11:30–8:00 (B)", schedule:{1:'wfh',2:'wfh',3:'office',4:'office',5:'office',6:'off',0:'off'}},
+    { name:"Bianca Young", supervisor:"Ainsley", team:"11:30–8:00 (B)", schedule:{1:'office',2:'office',3:'off',4:'wfh',5:'office',6:'wfh',0:'off'}},
+    { name:"Lybah Nawaz", supervisor:"Ainsley", team:"11:30–8:00 (B)", schedule:{1:'office',2:'office',3:'office',4:'off',5:'wfh',6:'wfh',0:'off'}},
+    { name:"Ramila Chaulagain", supervisor:"Ainsley", team:"11:30–8:00 (B)", schedule:{1:'off',2:'office',3:'office',4:'office',5:'wfh',6:'wfh',0:'off'}},
+    { name:"Vitria Pinkston", supervisor:"Ainsley", team:"11:30–8:00 (B)", schedule:{1:'office',2:'off',3:'office',4:'office',5:'wfh',6:'wfh',0:'off'}},
+  ];
+
+  // ---- State ----
+  let state = loadState();
+  let selectedDate = todayISO();
+  let activeTab = 'daily';
+  let viewMode = 'all';        // all | office | wfh
+  let groupMode = 'team';      // team | supervisor
+  let searchText = '';
+  let supervisorFilter = '';
+  let pendingRequests = [];
+  let pendingFilter = 'pending';
+  let pendingSupervisorFilter = '';
+  let manualLeaves = [];
+  let ledgerEntries = [];
+  let usageFrom, usageTo, usageSupervisor = '';
+  let trendFrom, trendTo;
+  let bankSearch = '', bankSupervisor = '';
+  let leaveListFilter = 'upcoming', leaveTypeFilter = '';
+  let chartUsage, chartTrendAccom, chartTrendLeave, chartTrendCoverage;
+  let schedPeriod = 'week';
+  let schedStart = todayISO();
+  let schedSearch = '';
+  let schedSupervisor = '';
+  let schedSort = 'team';
+  let covPeriod = 'week';
+  let covStart = todayISO();
+  let covSupervisor = '';
+
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function defaultSettings() {
+    return { flexLimitPerWeek:1, hoursPerCredit:4, otCutoffDays:14,
+             coverageGreen:95, coverageAmber:85, weekStart:1 };
+  }
+  function defaultState() {
+    return {
+      agents: SEED_AGENTS.map(a => ({ id: uid(), ...a, schedule: { ...a.schedule } })),
+      // overrides[date][agentId] = { type, source: 'manual'|'request', requestId? }
+      overrides: {},
+      settings: defaultSettings(),
+    };
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.agents) && data.agents.length) {
+          if (!data.settings) data.settings = defaultSettings();
+          // backfill missing setting keys
+          Object.assign(data.settings, { ...defaultSettings(), ...data.settings });
+          if (!data.overrides) data.overrides = {};
+          return data;
+        }
+      }
+    } catch(e) {}
+    return defaultState();
+  }
+  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  // ---- Status resolution for an agent on a date ----
+  // priority: manual leave → override → static schedule
+  function statusForDate(agent, dateISO) {
+    const leave = manualLeaves.find(l => l.agent_name === agent.name &&
+                                          dateISO >= l.start_date && dateISO <= l.end_date);
+    if (leave) return leave.leave_type; // pto | jiffy_day | unpaid
+    const o = state.overrides[dateISO]?.[agent.id];
+    if (o?.type) return o.type;
+    const dow = new Date(dateISO + 'T00:00:00').getDay();
+    return agent.schedule[dow] || 'off';
+  }
+
+  // ---- Date helpers ----
+  function isoFromDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function startOfWeek(dateISO) {
+    const d = new Date(dateISO + 'T00:00:00');
+    const ws = state.settings.weekStart;
+    const diff = (d.getDay() - ws + 7) % 7;
+    d.setDate(d.getDate() - diff);
+    return isoFromDate(d);
+  }
+  function endOfWeek(dateISO) {
+    const s = new Date(startOfWeek(dateISO) + 'T00:00:00');
+    s.setDate(s.getDate() + 6);
+    return isoFromDate(s);
+  }
+  function addDays(dateISO, n) {
+    const d = new Date(dateISO + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return isoFromDate(d);
+  }
+
+  // ---- Pending / Supabase fetches ----
+  async function fetchAllSupabase() {
+    if (!supabaseConfigured) {
+      document.getElementById('pendingConfigWarn').style.display = 'block';
+      return;
+    }
+    document.getElementById('pendingConfigWarn').style.display = 'none';
+    const [{ data: reqs }, { data: leaves }, { data: ledger }] = await Promise.all([
+      supabase.from('requests').select('*').order('created_at', { ascending: true }),
+      supabase.from('manual_leave').select('*').order('start_date', { ascending: false }),
+      supabase.from('extra_hours_ledger').select('*').order('created_at', { ascending: false }),
+    ]);
+    pendingRequests = reqs || [];
+    manualLeaves = leaves || [];
+    ledgerEntries = ledger || [];
+    updatePendingBadge();
+    render();
+  }
+
+  function updatePendingBadge() {
+    const count = pendingRequests.filter(r => r.status === 'pending').length;
+    const badge = document.getElementById('pendingBadge');
+    if (count > 0) { badge.style.display = 'inline-block'; badge.textContent = count; }
+    else { badge.style.display = 'none'; }
+  }
+
+  // ---- Filtered agents (for daily view) ----
+  function filteredAgents() {
+    return state.agents.filter(a => {
+      if (searchText && !a.name.toLowerCase().includes(searchText.toLowerCase())) return false;
+      if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
+      if (viewMode !== 'all') {
+        const s = statusForDate(a, selectedDate);
+        if (viewMode === 'office' && !['office','accom_office_change'].includes(s)) return false;
+        if (viewMode === 'wfh'   && !['wfh','accom_wfh','accom_early','accom_late','extra_hours_wfh'].includes(s)) return false;
+      }
+      return true;
+    });
+  }
+
+  // ---- Daily Status render ----
+  function renderDaily() {
+    document.getElementById('datePicker').value = selectedDate;
+    const d = new Date(selectedDate + 'T00:00:00');
+    document.getElementById('dateDisplay').textContent =
+      d.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    populateSelect('supervisorFilter', supervisorFilter);
+    renderSummary();
+    renderHeatmap();
+    renderAgentGroups();
+  }
+
+  function populateSelect(id, value) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const sups = [...new Set(state.agents.map(a => a.supervisor).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All</option>' + sups.map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
+    sel.value = value || '';
+  }
+
+  function renderSummary() {
+    const counts = { office:0, wfh:0, accom:0, accom_wfh:0, accom_early:0, accom_late:0, accom_office_change:0,
+                     extra_hours_wfh:0, pto:0, jiffy_day:0, unpaid:0, off:0 };
+    // Use ALL agents for stats even when viewMode filters list
+    const visible = state.agents.filter(a => {
+      if (searchText && !a.name.toLowerCase().includes(searchText.toLowerCase())) return false;
+      if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
+      return true;
+    });
+    visible.forEach(a => {
+      const s = statusForDate(a, selectedDate);
+      counts[s]++;
+      if (ACCOM_TYPES.includes(s)) counts.accom++;
+    });
+
+    // Coverage = (in-office or WFH-or-accommodation, i.e., working today) ÷ scheduled (total minus day off)
+    const dow = new Date(selectedDate + 'T00:00:00').getDay();
+    const scheduled = visible.filter(a => (a.schedule[dow] || 'off') !== 'off').length;
+    const onLeave = counts.pto + counts.jiffy_day + counts.unpaid;
+    const working = scheduled - onLeave;
+    const coveragePct = scheduled === 0 ? 0 : Math.round(100 * working / scheduled);
+    const cls = coveragePct >= state.settings.coverageGreen ? '' :
+                coveragePct >= state.settings.coverageAmber ? 'amber' : 'red';
+
+    const cards = [
+      { key:'office', label:'In Office', value: counts.office },
+      { key:'wfh', label:'Regular WFH', value: counts.wfh, sub: 'From schedule' },
+      { key:'accom', label:'Accommodations', value: counts.accom,
+        breakdown: `<b>${counts.accom_wfh}</b> WFH · <b>${counts.accom_early}</b> Early · <b>${counts.accom_late}</b> Late${counts.accom_office_change ? ' · <b>'+counts.accom_office_change+'</b> Office swap' : ''}` },
+      { key:'extra', label:'Extra Hrs WFH', value: counts.extra_hours_wfh, sub: 'Redeemed credits' },
+      { key:'pto', label:'PTO', value: counts.pto },
+      { key:'jiffy', label:'Jiffy Days', value: counts.jiffy_day },
+      { key:'unpaid', label:'Unpaid', value: counts.unpaid },
+      { key:'off', label:'Day Off', value: counts.off },
+      { key:'coverage', label:'Staffing Coverage', value: coveragePct + '%',
+        sub: `${working}/${scheduled} working`, extraClass: cls },
+    ];
+    const el = document.getElementById('summary');
+    el.innerHTML = cards.map(c => `
+      <div class="stat ${c.key} ${c.extraClass||''}">
+        <div class="label">${c.label}</div>
+        <div class="value">${c.value}</div>
+        ${c.breakdown ? `<div class="breakdown">${c.breakdown}</div>` : ''}
+        ${c.sub ? `<div class="breakdown">${c.sub}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // ---- Hourly heatmap for selected date ----
+  function renderHeatmap() {
+    const hours = []; for (let h=6; h<=20; h++) hours.push(h);
+    const visible = state.agents.filter(a => {
+      if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
+      return true;
+    });
+    const dow = new Date(selectedDate + 'T00:00:00').getDay();
+    const cells = hours.map(h => {
+      let scheduled = 0, working = 0;
+      visible.forEach(a => {
+        const sh = SHIFT_HOURS[a.team]; if (!sh) return;
+        const onShift = h >= Math.floor(sh.start) && h < Math.ceil(sh.end);
+        if (!onShift) return;
+        const baseStatus = a.schedule[dow] || 'off';
+        if (baseStatus === 'off') return;
+        scheduled++;
+        const s = statusForDate(a, selectedDate);
+        if (!['pto','jiffy_day','unpaid'].includes(s)) working++;
+      });
+      const pct = scheduled === 0 ? null : Math.round(100 * working / scheduled);
+      const cls = pct === null ? 'hm-empty' :
+                  pct >= state.settings.coverageGreen ? 'hm-good' :
+                  pct >= state.settings.coverageAmber ? 'hm-ok' : 'hm-bad';
+      return { hour:h, pct, working, scheduled, cls };
+    });
+    const grid = document.getElementById('heatmap');
+    grid.innerHTML = cells.map(c => `
+      <div class="heatmap-cell ${c.cls}" title="${c.working}/${c.scheduled} working">
+        <div style="font-weight:600">${formatHour(c.hour)}</div>
+        <div style="font-size:13px; font-weight:700; margin-top:2px">${c.pct === null ? '—' : c.pct + '%'}</div>
+        <div class="hm-label">${c.working}/${c.scheduled}</div>
+      </div>
+    `).join('');
+  }
+  function formatHour(h) {
+    const ampm = h < 12 ? 'a' : 'p';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${h12}${ampm}`;
+  }
+
+  function renderAgentGroups() {
+    const list = filteredAgents();
+    const container = document.getElementById('dailyContainer');
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">No agents match the current filters.</div>'; return;
+    }
+    const groups = {};
+    list.forEach(a => {
+      const key = groupMode === 'team' ? (a.team || 'Other') : (a.supervisor || 'Unassigned');
+      (groups[key] ||= []).push(a);
+    });
+    const orderedKeys = groupMode === 'team'
+      ? [...TEAM_ORDER, ...Object.keys(groups).filter(k => !TEAM_ORDER.includes(k))].filter(k => groups[k])
+      : Object.keys(groups).sort();
+
+    container.innerHTML = '';
+    orderedKeys.forEach(k => {
+      const arr = groups[k].sort((a,b) => a.name.localeCompare(b.name));
+      const counts = countByStatus(arr, selectedDate);
+      const sec = document.createElement('div');
+      sec.className = 'group-section';
+      const accomTotal = ACCOM_TYPES.reduce((s,t) => s + counts[t], 0);
+      const chips = [];
+      if (counts.office) chips.push(`<span class="count-chip" style="background:#ecfdf5;color:#065f46">🏢 ${counts.office} Office</span>`);
+      if (counts.wfh) chips.push(`<span class="count-chip" style="background:#eff6ff;color:#1e40af">🏠 ${counts.wfh} WFH</span>`);
+      if (accomTotal) chips.push(`<span class="count-chip" style="background:#fef3c7;color:#92400e">⚡ ${accomTotal} Accom</span>`);
+      if (counts.extra_hours_wfh) chips.push(`<span class="count-chip" style="background:#ccfbf1;color:#0f766e">🎁 ${counts.extra_hours_wfh} Extra</span>`);
+      if (counts.pto) chips.push(`<span class="count-chip" style="background:#fee2e2;color:#991b1b">🌴 ${counts.pto} PTO</span>`);
+      if (counts.jiffy_day) chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">J ${counts.jiffy_day}</span>`);
+      if (counts.unpaid) chips.push(`<span class="count-chip" style="background:#f3e8ff;color:#6b21a8">U ${counts.unpaid}</span>`);
+      if (counts.off) chips.push(`<span class="count-chip">— ${counts.off} Off</span>`);
+      sec.innerHTML = `
+        <div class="group-header">
+          <div>
+            <h3>${groupMode === 'team' ? 'Team ' : ''}${escapeHtml(k)}</h3>
+            <div class="group-meta">${arr.length} agent${arr.length===1?'':'s'}</div>
+          </div>
+          <div class="group-counts">${chips.join('')}</div>
+        </div>
+        <div class="group-body"></div>
+      `;
+      const body = sec.querySelector('.group-body');
+      arr.forEach(agent => body.appendChild(renderAgentRow(agent)));
+      container.appendChild(sec);
+    });
+  }
+
+  function countByStatus(arr, dateISO) {
+    const c = { office:0, wfh:0, accom_wfh:0, accom_early:0, accom_late:0, accom_office_change:0,
+                extra_hours_wfh:0, pto:0, jiffy_day:0, unpaid:0, off:0 };
+    arr.forEach(a => { const s = statusForDate(a, dateISO); if (c[s] !== undefined) c[s]++; });
+    return c;
+  }
+
+  function renderAgentRow(agent) {
+    const status = statusForDate(agent, selectedDate);
+    const info = STATUSES[status];
+    const override = state.overrides[selectedDate]?.[agent.id];
+    const dow = new Date(selectedDate + 'T00:00:00').getDay();
+    const baseStatus = agent.schedule[dow] || 'off';
+    const isLeave = ['pto','jiffy_day','unpaid'].includes(status);
+    const isAccom = ACCOM_TYPES.includes(status);
+    const isExtra = status === 'extra_hours_wfh';
+    const isDayOff = baseStatus === 'off' && !override && !isLeave;
+
+    // weekly accom WFH count
+    const wkStart = startOfWeek(selectedDate);
+    const wkEnd = endOfWeek(selectedDate);
+    let weekAccomWFH = 0;
+    Object.keys(state.overrides).forEach(date => {
+      if (date < wkStart || date > wkEnd) return;
+      if (state.overrides[date][agent.id]?.type === 'accom_wfh') weekAccomWFH++;
+    });
+    const flexAtLimit = weekAccomWFH >= state.settings.flexLimitPerWeek;
+    const balance = balanceForAgent(agent.name);
+
+    const row = document.createElement('div');
+    row.className = `agent-row ${isLeave?'is-leave':''} ${isAccom?'is-accom':''} ${isExtra?'is-extra':''} ${isDayOff?'is-off':''}`;
+    row.innerHTML = `
+      <div class="agent-info">
+        <div class="name">
+          ${escapeHtml(agent.name)}
+          <span class="counter-chip ${flexAtLimit?'warn':''}" title="Accom WFH used this week (limit ${state.settings.flexLimitPerWeek})">A:${weekAccomWFH}/${state.settings.flexLimitPerWeek}</span>
+          <span class="counter-chip bank" title="Extra Hrs credit balance">🎁 ${formatBalance(balance)}</span>
+        </div>
+        <div class="sub">${escapeHtml(agent.supervisor || '')}${agent.supervisor && agent.team ? ' · ' : ''}${escapeHtml(agent.team || '')}</div>
+      </div>
+      <div class="status-pill ${info.class}">${info.label}</div>
+      <div>${override ? `<span class="override-tag">Override</span>` : ''}${isLeave ? `<span class="override-tag">HR Leave</span>` : ''}</div>
+      <div class="status-buttons">
+        <button class="status-btn accom_wfh ${override?.type==='accom_wfh'?'active':''}" data-agent="${agent.id}" data-status="accom_wfh"
+          ${(flexAtLimit && override?.type !== 'accom_wfh') ? 'disabled title="Weekly cap reached"':''}>Accom WFH</button>
+        <button class="status-btn accom_early ${override?.type==='accom_early'?'active':''}" data-agent="${agent.id}" data-status="accom_early">Early</button>
+        <button class="status-btn accom_late ${override?.type==='accom_late'?'active':''}" data-agent="${agent.id}" data-status="accom_late">Late</button>
+        <button class="status-btn extra_hours_wfh ${override?.type==='extra_hours_wfh'?'active':''}" data-agent="${agent.id}" data-status="extra_hours_wfh"
+          ${(balance < 1 && override?.type !== 'extra_hours_wfh') ? 'disabled title="No credits"':''}>🎁 Extra</button>
+        <button class="status-btn pto ${status==='pto'?'active':''}" data-agent="${agent.id}" data-status="pto" title="Mark PTO for this day">PTO</button>
+        <button class="status-btn jiffy_day ${status==='jiffy_day'?'active':''}" data-agent="${agent.id}" data-status="jiffy_day" title="Mark Jiffy Day for this day">Jiffy</button>
+        <button class="status-btn unpaid ${status==='unpaid'?'active':''}" data-agent="${agent.id}" data-status="unpaid" title="Mark Unpaid for this day">Unpaid</button>
+        ${override ? `<button class="reset-btn" data-reset="${agent.id}" title="Revert to default">↺</button>` : ''}
+      </div>
+    `;
+    row.querySelectorAll('.status-btn:not(:disabled)').forEach(b => b.addEventListener('click', () => {
+      const newStatus = b.dataset.status;
+      if (['pto','jiffy_day','unpaid'].includes(newStatus)) {
+        toggleQuickLeave(agent, newStatus);
+        return;
+      }
+      const cur = state.overrides[selectedDate]?.[agent.id]?.type;
+      if (cur === newStatus) clearOverride(agent.id);
+      else setManualOverride(agent.id, newStatus);
+    }));
+    row.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => clearOverride(agent.id)));
+    return row;
+  }
+
+  function setManualOverride(agentId, status) {
+    if (status === 'extra_hours_wfh') {
+      const agent = state.agents.find(a => a.id === agentId);
+      const balance = balanceForAgent(agent.name);
+      const wasExtra = state.overrides[selectedDate]?.[agentId]?.type === 'extra_hours_wfh';
+      if (!wasExtra && balance < 1) {
+        alert(`${agent.name} has no Extra Hours credits.`); return;
+      }
+      if (!wasExtra) addLedgerEntry(agent.name, 'redeem', { credits:1, note:'Manual override redemption' });
+    }
+    if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
+    state.overrides[selectedDate][agentId] = { type: status, source: 'manual', ts: new Date().toISOString() };
+    saveState(); render();
+  }
+  function clearOverride(agentId) {
+    const cur = state.overrides[selectedDate]?.[agentId];
+    if (cur?.type === 'extra_hours_wfh') {
+      // refund credit if it was a manual override; if from a request, the request approval/denial flow handles this
+      if (cur.source === 'manual') {
+        const agent = state.agents.find(a => a.id === agentId);
+        // Find latest "Manual override redemption" for this agent and remove it
+        // (simple approach — for full correctness, use Supabase; locally we approximate)
+      }
+    }
+    if (state.overrides[selectedDate]) {
+      delete state.overrides[selectedDate][agentId];
+      if (Object.keys(state.overrides[selectedDate]).length === 0) delete state.overrides[selectedDate];
+    }
+    saveState(); render();
+  }
+  function clearAllOverridesForDay() {
+    if (!state.overrides[selectedDate]) { alert('No overrides on this day.'); return; }
+    if (!confirm('Clear all overrides for this day?')) return;
+    delete state.overrides[selectedDate];
+    saveState(); render();
+  }
+
+  // Quick same-day leave toggle from Daily Status
+  async function toggleQuickLeave(agent, leaveType) {
+    // Check existing leave for this agent on this date
+    const existing = manualLeaves.find(l => l.agent_name === agent.name &&
+      selectedDate >= l.start_date && selectedDate <= l.end_date);
+
+    if (existing && existing.leave_type === leaveType) {
+      // Toggle off — only if it's a single-day entry on this date
+      if (existing.start_date === selectedDate && existing.end_date === selectedDate) {
+        if (supabaseConfigured) {
+          const { error } = await supabase.from('manual_leave').delete().eq('id', existing.id);
+          if (error) { alert(error.message); return; }
+          await fetchAllSupabase();
+        } else {
+          manualLeaves = manualLeaves.filter(l => l.id !== existing.id);
+          render();
+        }
+      } else {
+        alert(`${agent.name} already has multi-day ${STATUSES[leaveType].label} covering ${existing.start_date}–${existing.end_date}. Remove it from Bulk Leave Entry tab.`);
+      }
+      return;
+    }
+    if (existing && existing.leave_type !== leaveType) {
+      if (!confirm(`${agent.name} is already on ${STATUSES[existing.leave_type].label} for ${existing.start_date}–${existing.end_date}. Replace with ${STATUSES[leaveType].label}?`)) return;
+      if (supabaseConfigured) await supabase.from('manual_leave').delete().eq('id', existing.id);
+      else manualLeaves = manualLeaves.filter(l => l.id !== existing.id);
+    }
+    // Add a same-day entry
+    if (supabaseConfigured) {
+      const { error } = await supabase.from('manual_leave').insert({
+        agent_name: agent.name, leave_type: leaveType,
+        start_date: selectedDate, end_date: selectedDate,
+        note: 'Quick entry from Daily Status', entered_by: 'supervisor'
+      });
+      if (error) { alert(error.message); return; }
+      await fetchAllSupabase();
+    } else {
+      manualLeaves.push({ id: uid(), agent_name: agent.name, leave_type: leaveType,
+        start_date: selectedDate, end_date: selectedDate, note: 'Quick entry (local)' });
+      render();
+    }
+  }
+
+  // ---- Extra Hours balance (from Supabase ledger + local pending redemptions) ----
+  function balanceForAgent(name) {
+    let bal = 0;
+    ledgerEntries.filter(e => e.agent_name === name).forEach(e => {
+      if (e.entry_type === 'earn') bal += (e.credits || (e.hours || 0) / state.settings.hoursPerCredit);
+      else if (e.entry_type === 'redeem') bal -= (e.credits || 1);
+      else if (e.entry_type === 'adjustment') bal += (e.credits || 0);
+    });
+    return bal;
+  }
+
+  async function addLedgerEntry(agentName, entryType, opts={}) {
+    if (!supabaseConfigured) return;
+    const { error, data } = await supabase.from('extra_hours_ledger').insert({
+      agent_name: agentName,
+      entry_type: entryType,
+      hours: opts.hours || null,
+      credits: opts.credits != null ? opts.credits : (entryType === 'redeem' ? 1 : null),
+      date_worked: opts.dateWorked || null,
+      source_request_id: opts.requestId || null,
+      approved_by: opts.approvedBy || 'supervisor',
+      note: opts.note || null,
+    }).select();
+    if (!error && data) ledgerEntries.unshift(...data);
+  }
+
+  // ============== PENDING REQUESTS ==============
+  function renderPending() {
+    populateSelect('pendingSupervisor', pendingSupervisorFilter);
+    document.getElementById('pendingSupervisor').value = pendingSupervisorFilter || '';
+    const list = document.getElementById('pendingList');
+    const history = document.getElementById('pendingHistory');
+    let visible = pendingRequests.filter(r =>
+      pendingFilter === 'pending' ? r.status === 'pending' : true);
+    if (pendingSupervisorFilter) visible = visible.filter(r => r.agent_supervisor === pendingSupervisorFilter);
+    const pending = visible.filter(r => r.status === 'pending');
+    const decided = visible.filter(r => r.status === 'approved' || r.status === 'denied' || r.status === 'cancelled');
+
+    if (pending.length === 0) {
+      list.innerHTML = `<div class="empty">No pending requests${supabaseConfigured ? ' — you\'re caught up.' : '.'}</div>`;
+    } else {
+      list.innerHTML = pending.map(r => renderRequestCard(r, true)).join('');
+      list.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', () => approveRequest(b.dataset.approve)));
+      list.querySelectorAll('[data-deny]').forEach(b => b.addEventListener('click', () => denyRequest(b.dataset.deny)));
+    }
+    if (pendingFilter === 'all' && decided.length) {
+      history.innerHTML = `<h3>Recent decisions</h3>` + decided.slice(-30).reverse().map(r => renderRequestCard(r, false)).join('');
+    } else history.innerHTML = '';
+  }
+
+  function renderRequestCard(r, withActions) {
+    const agent = state.agents.find(a => a.name === r.agent_name);
+    const typeLabel = STATUSES[r.request_type]?.label || r.request_type.replace(/_/g, ' ');
+    const dateStr = new Date(r.request_date + 'T00:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+    const submittedAgo = timeAgo(r.created_at);
+
+    let warnings = '';
+    if (withActions && agent) {
+      if (r.request_type === 'accom_wfh') {
+        const [s, e] = [startOfWeek(r.request_date), endOfWeek(r.request_date)];
+        let used = 0;
+        Object.keys(state.overrides).forEach(d => {
+          if (d >= s && d <= e && state.overrides[d][agent.id]?.type === 'accom_wfh') used++;
+        });
+        if (used >= state.settings.flexLimitPerWeek) {
+          warnings += `<div class="req-warn">Already used Accom WFH this week. Approving exceeds the ${state.settings.flexLimitPerWeek}-per-week cap.</div>`;
+        }
+      }
+      if (r.request_type === 'extra_hours_wfh') {
+        const balance = balanceForAgent(agent.name);
+        if (balance < 1) warnings += `<div class="req-warn danger">No Extra Hours credits available (balance: ${formatBalance(balance)}).</div>`;
+        else warnings += `<div class="req-warn ok">${formatBalance(balance)} credit(s) available — approval will deduct 1.</div>`;
+      }
+      if (r.request_type === 'ot_claim') {
+        // outside regular shift?
+        const sh = SHIFT_HOURS[agent.team];
+        const startHr = parseFloat((r.ot_start_time||'').split(':')[0]) + parseFloat((r.ot_start_time||'').split(':')[1])/60;
+        const endHr = parseFloat((r.ot_end_time||'').split(':')[0]) + parseFloat((r.ot_end_time||'').split(':')[1])/60;
+        if (sh && !isNaN(startHr) && !isNaN(endHr)) {
+          const overlapsRegular = startHr < sh.end && endHr > sh.start;
+          const fullyInside = startHr >= sh.start && endHr <= sh.end;
+          if (fullyInside) warnings += `<div class="req-warn">Claimed hours are inside the agent's regular shift (${formatHour(sh.start)}–${formatHour(sh.end)}). Verify this is real OT.</div>`;
+        }
+        // duplicate check
+        const dup = pendingRequests.find(o => o.id !== r.id && o.agent_name === r.agent_name &&
+          o.request_type === 'ot_claim' && o.request_date === r.request_date && o.status === 'approved');
+        if (dup) warnings += `<div class="req-warn danger">A previous OT claim for this date is already approved.</div>`;
+        // cutoff check
+        const ageDays = (new Date(selectedDate) - new Date(r.request_date)) / 86400000;
+        if (ageDays > state.settings.otCutoffDays) {
+          warnings += `<div class="req-warn">Claim is ${Math.round(ageDays)} days after the date worked, beyond the ${state.settings.otCutoffDays}-day cutoff.</div>`;
+        }
+        // overlap with leave
+        const leave = manualLeaves.find(l => l.agent_name === r.agent_name && r.request_date >= l.start_date && r.request_date <= l.end_date);
+        if (leave) warnings += `<div class="req-warn danger">This date overlaps a logged ${leave.leave_type.toUpperCase()} leave.</div>`;
+      }
+    }
+
+    const statusBadge = r.status === 'approved' ? `<span class="pill ok">Approved</span>` :
+                       r.status === 'denied' ? `<span class="pill danger">Denied</span>` :
+                       r.status === 'cancelled' ? `<span class="pill" style="background:#f3f4f6;color:#6b7280">Cancelled by agent</span>` : '';
+
+    let detailLines = '';
+    if (r.request_type === 'ot_claim') {
+      detailLines = `
+        <p style="margin:0 0 4px; font-size:13px;"><strong>OT:</strong> ${r.ot_start_time || '—'} to ${r.ot_end_time || '—'} (${r.ot_hours || '?'} hrs)</p>
+        ${r.ot_purpose ? `<p style="margin:0 0 4px; font-size:13px;">Purpose: ${escapeHtml(r.ot_purpose)}</p>` : ''}
+        ${r.ot_pre_authorizer ? `<p style="margin:0; font-size:12px; color:var(--muted)">Pre-authorized by: ${escapeHtml(r.ot_pre_authorizer)}</p>` : ''}
+      `;
+    } else {
+      detailLines = `
+        ${r.reason ? `<p style="margin:0 0 4px; font-size:13px;">${escapeHtml(r.reason)}</p>` : ''}
+        ${r.coverage ? `<p style="margin:0; font-size:12px; color:var(--muted)">Coverage: ${escapeHtml(r.coverage)}</p>` : ''}
+      `;
+    }
+
+    const canApprove = withActions;
+
+    return `
+      <div class="request-card type-${r.request_type}">
+        <div class="req-row">
+          <div class="req-info">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span class="req-name">${escapeHtml(r.agent_name)}</span>
+              <span class="req-meta">${escapeHtml(r.agent_supervisor || '')}${r.agent_team ? ' · ' + escapeHtml(r.agent_team) : ''}</span>
+              ${statusBadge}
+            </div>
+            <div class="req-type-row">
+              <span class="req-pill ${r.request_type}">${typeLabel}</span>
+              <span style="font-size:13px">${dateStr}</span>
+              <span style="font-size:12px; color:var(--muted)">· ${submittedAgo}</span>
+            </div>
+            ${warnings}
+            ${detailLines}
+            ${r.decision_note ? `<p style="margin:6px 0 0; font-size:12px; color:var(--muted)"><em>Note: ${escapeHtml(r.decision_note)}</em></p>` : ''}
+          </div>
+          ${withActions ? `
+            <div class="req-actions">
+              ${canApprove ? `<button class="btn-approve" data-approve="${r.id}">Approve</button>` : ''}
+              <button class="btn-danger" data-deny="${r.id}">Deny</button>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)}d ago`;
+  }
+
+  async function approveRequest(id) {
+    const req = pendingRequests.find(r => r.id === id); if (!req) return;
+    const agent = state.agents.find(a => a.name === req.agent_name);
+    if (!agent) {
+      alert(`Agent "${req.agent_name}" isn't in roster. Add via Static Schedule.`); return;
+    }
+
+    if (req.request_type === 'ot_claim') {
+      // Add an "earn" entry to the ledger
+      const credits = (req.ot_hours || 0) / state.settings.hoursPerCredit;
+      await addLedgerEntry(req.agent_name, 'earn', {
+        hours: req.ot_hours, credits, dateWorked: req.request_date,
+        requestId: req.id, note: req.ot_purpose || ''
+      });
+    } else if (req.request_type === 'extra_hours_wfh') {
+      const balance = balanceForAgent(agent.name);
+      if (balance < 1) { alert('No Extra Hours credits available.'); return; }
+      await addLedgerEntry(req.agent_name, 'redeem', {
+        credits:1, dateWorked: req.request_date, requestId: req.id, note:'Redeemed via approved request'
+      });
+      if (!state.overrides[req.request_date]) state.overrides[req.request_date] = {};
+      state.overrides[req.request_date][agent.id] = { type: 'extra_hours_wfh', source: 'request', requestId: req.id };
+      saveState();
+    } else {
+      // accom_wfh / accom_early / accom_late / accom_office_change
+      if (!state.overrides[req.request_date]) state.overrides[req.request_date] = {};
+      state.overrides[req.request_date][agent.id] = { type: req.request_type, source: 'request', requestId: req.id };
+      saveState();
+    }
+
+    if (supabaseConfigured) {
+      const { error } = await supabase.from('requests').update({
+        status:'approved', decided_by:'supervisor', decided_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) alert('Approved locally but Supabase update failed: ' + error.message);
+    }
+    await fetchAllSupabase();
+  }
+
+  async function denyRequest(id) {
+    const note = prompt('Optional reason (visible to the agent):', '') || '';
+    if (!supabaseConfigured) return;
+    const { error } = await supabase.from('requests').update({
+      status:'denied', decided_by:'supervisor', decided_at: new Date().toISOString(),
+      decision_note: note || null
+    }).eq('id', id);
+    if (error) { alert('Could not deny: ' + error.message); return; }
+    await fetchAllSupabase();
+  }
+
+  // ============== BULK LEAVE ENTRY ==============
+  function renderLeave() {
+    // populate agent dropdown
+    const sel = document.getElementById('leaveAgent');
+    sel.innerHTML = state.agents.slice().sort((a,b) => a.name.localeCompare(b.name))
+      .map(a => `<option value="${escapeAttr(a.name)}">${escapeHtml(a.name)} — ${escapeHtml(a.supervisor||'')}</option>`).join('');
+    document.getElementById('leaveStart').value = todayISO();
+    document.getElementById('leaveEnd').value = todayISO();
+    renderLeaveList();
+  }
+  function renderLeaveList() {
+    const list = document.getElementById('leaveList');
+    let entries = manualLeaves.slice();
+    if (leaveListFilter === 'upcoming') entries = entries.filter(e => e.end_date >= todayISO());
+    if (leaveTypeFilter) entries = entries.filter(e => e.leave_type === leaveTypeFilter);
+    entries.sort((a,b) => a.start_date.localeCompare(b.start_date));
+    if (entries.length === 0) {
+      list.innerHTML = '<div class="empty">No leave entries match the filter.</div>'; return;
+    }
+    list.innerHTML = entries.map(e => `
+      <div class="leave-list-item">
+        <div>
+          <div><strong>${escapeHtml(e.agent_name)}</strong> · <span class="status-pill ${e.leave_type}" style="display:inline-flex; padding:2px 8px; font-size:10px">${STATUSES[e.leave_type].label}</span></div>
+          <div style="font-size:12px; color:var(--muted)">${e.start_date} → ${e.end_date}${e.note ? ' · ' + escapeHtml(e.note) : ''}</div>
+        </div>
+        <button class="btn-danger" data-del-leave="${e.id}">Delete</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-del-leave]').forEach(b => b.addEventListener('click', () => deleteLeave(b.dataset.delLeave)));
+  }
+  async function addLeave() {
+    if (!supabaseConfigured) { alert('Supabase not configured. See SETUP.md.'); return; }
+    const agent = document.getElementById('leaveAgent').value;
+    const type = document.getElementById('leaveType').value;
+    const start = document.getElementById('leaveStart').value;
+    const end = document.getElementById('leaveEnd').value;
+    const note = document.getElementById('leaveNote').value.trim();
+    if (!agent || !start || !end || start > end) { alert('Pick a valid agent and date range.'); return; }
+    const { error } = await supabase.from('manual_leave').insert({
+      agent_name: agent, leave_type: type, start_date: start, end_date: end,
+      note: note || null, entered_by: 'supervisor'
+    });
+    if (error) { alert('Could not save: ' + error.message); return; }
+    document.getElementById('leaveNote').value = '';
+    await fetchAllSupabase();
+  }
+  async function deleteLeave(id) {
+    if (!confirm('Delete this leave entry?')) return;
+    if (!supabaseConfigured) return;
+    const { error } = await supabase.from('manual_leave').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
+    await fetchAllSupabase();
+  }
+
+  // ============== ACCOMMODATION USAGE ==============
+  function renderUsage() {
+    populateSelect('usageSupervisor', usageSupervisor);
+    if (!usageFrom) usageFrom = addDays(todayISO(), -29);
+    if (!usageTo) usageTo = todayISO();
+    document.getElementById('usageFrom').value = usageFrom;
+    document.getElementById('usageTo').value = usageTo;
+
+    // Aggregate per agent — Total counts ONLY true accommodations.
+    // PTO/Jiffy/Unpaid (HR-approved leave) and Extra Hrs WFH (earned reward) are NOT accommodations.
+    const agents = state.agents.filter(a => !usageSupervisor || a.supervisor === usageSupervisor);
+    const rows = agents.map(a => {
+      const uses = countUsesInRange(a, usageFrom, usageTo);
+      const earned = ledgerEntries.filter(l => l.agent_name === a.name && l.entry_type === 'earn'
+        && l.date_worked >= usageFrom && l.date_worked <= usageTo)
+        .reduce((s,l) => s + (l.hours || 0), 0);
+      const total = uses.accom_wfh + uses.accom_early + uses.accom_late + uses.accom_office_change;
+      return { id:a.id, name:a.name, supervisor:a.supervisor||'', team:a.team||'', ...uses, total, earned, balance: balanceForAgent(a.name) };
+    });
+    rows.sort((a,b) => b.total - a.total);
+
+    // Bar chart — accommodations only, no Extra Hrs (incentive) or leave (HR-approved).
+    const top = rows.filter(r => r.total > 0).slice(0, 30);
+    if (chartUsage) chartUsage.destroy();
+    if (top.length === 0) {
+      document.getElementById('usageChart').parentElement.innerHTML = '<div class="empty">No accommodations logged in this date range yet. Click Accom buttons on Daily Status — or approve accommodation requests in Pending Requests — and they\'ll appear here.</div>';
+    } else {
+      chartUsage = new Chart(document.getElementById('usageChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: top.map(r => r.name),
+          datasets: [
+            { label:'WFH accommodation', data: top.map(r => r.accom_wfh), backgroundColor:'#f59e0b' },
+            { label:'Came in early', data: top.map(r => r.accom_early), backgroundColor:'#8b5cf6' },
+            { label:'Stayed late', data: top.map(r => r.accom_late), backgroundColor:'#ec4899' },
+            { label:'Office day swap', data: top.map(r => r.accom_office_change), backgroundColor:'#06b6d4' },
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{position:'bottom', labels:{font:{size:11}}}, title:{display:false} },
+          scales:{ x:{ stacked:true, ticks:{font:{size:10}, maxRotation:60, minRotation:45} },
+                   y:{ stacked:true, beginAtZero:true, ticks:{precision:0} } }
+        }
+      });
+    }
+
+    // Detail table — Total counts only accommodations.
+    // Extra Hrs WFH and OT Earned are shown for reference (earned-reward usage), separated visually.
+    const t = document.getElementById('usageTable');
+    t.innerHTML = `
+      <thead><tr>
+        <th colspan="6" style="text-align:center; padding-top:6px; padding-bottom:4px; background:#fff7ed; color:#9a3412">Accommodations (counted as abuse signal)</th>
+        <th colspan="3" style="text-align:center; padding-top:6px; padding-bottom:4px; background:#f0fdfa; color:#0f766e">Earned-reward usage (FYI only)</th>
+      </tr><tr>
+        <th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">Total</th>
+        <th class="num">Extra Hrs WFH used</th><th class="num">OT hrs earned</th><th class="num">Bank balance</th>
+      </tr></thead>
+      <tbody>
+        ${rows.length === 0 ? '<tr><td colspan="9" class="empty">No data.</td></tr>' :
+          rows.map(r => {
+            const flag = r.total >= 5 ? 'danger' : r.total >= 3 ? 'warn' : 'ok';
+            return `<tr>
+              <td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td>
+              <td>${escapeHtml(r.supervisor)}</td>
+              <td class="num">${r.accom_wfh || ''}</td>
+              <td class="num">${r.accom_early || ''}</td>
+              <td class="num">${r.accom_late || ''}</td>
+              <td class="num"><span class="pill ${flag}">${r.total}</span></td>
+              <td class="num" style="color:var(--muted)">${r.extra_hours_wfh || ''}</td>
+              <td class="num" style="color:var(--muted)">${r.earned || ''}</td>
+              <td class="num" style="color:var(--muted)">${formatBalance(r.balance)}</td>
+            </tr>`;
+          }).join('')}
+      </tbody>
+    `;
+  }
+  function countUsesInRange(agent, fromISO, toISO) {
+    const counts = { accom_wfh:0, accom_early:0, accom_late:0, accom_office_change:0, extra_hours_wfh:0 };
+    Object.keys(state.overrides).forEach(date => {
+      if (date < fromISO || date > toISO) return;
+      const o = state.overrides[date][agent.id];
+      if (o && counts[o.type] !== undefined) counts[o.type]++;
+    });
+    return counts;
+  }
+  function exportUsageCSV() {
+    const rows = [['Agent','Supervisor','Team','Accom WFH','Accom Early','Accom Late','Accom Office swap','Accommodation Total','— FYI: Extra Hrs WFH used','— FYI: OT Hrs earned','— FYI: Bank Balance']];
+    state.agents.forEach(a => {
+      if (usageSupervisor && a.supervisor !== usageSupervisor) return;
+      const c = countUsesInRange(a, usageFrom, usageTo);
+      const earned = ledgerEntries.filter(l => l.agent_name === a.name && l.entry_type === 'earn'
+        && l.date_worked >= usageFrom && l.date_worked <= usageTo)
+        .reduce((s,l) => s + (l.hours || 0), 0);
+      const total = c.accom_wfh + c.accom_early + c.accom_late + c.accom_office_change;
+      rows.push([a.name, a.supervisor||'', a.team||'', c.accom_wfh, c.accom_early, c.accom_late, c.accom_office_change, total, c.extra_hours_wfh, earned, formatBalance(balanceForAgent(a.name))]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+    a.download = `accommodation-usage-${usageFrom}-to-${usageTo}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // ============== EXTRA HOURS BANK ==============
+  function renderBank() {
+    populateSelect('bankSupervisor', bankSupervisor);
+    let agents = state.agents.slice();
+    if (bankSearch) agents = agents.filter(a => a.name.toLowerCase().includes(bankSearch.toLowerCase()));
+    if (bankSupervisor) agents = agents.filter(a => a.supervisor === bankSupervisor);
+    agents.sort((a,b) => balanceForAgent(b.name) - balanceForAgent(a.name) || a.name.localeCompare(b.name));
+    const t = document.getElementById('bankTable');
+    t.innerHTML = `
+      <thead><tr>
+        <th>Agent</th><th>Supervisor</th><th class="num">Earned (hrs)</th>
+        <th class="num">Redeemed</th><th class="num">Balance</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${agents.map(a => {
+          const ents = ledgerEntries.filter(e => e.agent_name === a.name);
+          const earned = ents.filter(e => e.entry_type==='earn').reduce((s,e) => s+(e.hours||0), 0);
+          const redeemed = ents.filter(e => e.entry_type==='redeem').reduce((s,e) => s+(e.credits||1), 0);
+          const bal = balanceForAgent(a.name);
+          const flag = bal >= 1 ? 'bank' : 'ok';
+          return `<tr>
+            <td><strong>${escapeHtml(a.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(a.team||'')}</div></td>
+            <td>${escapeHtml(a.supervisor||'')}</td>
+            <td class="num">${earned || ''}</td>
+            <td class="num">${redeemed || ''}</td>
+            <td class="num"><span class="pill ${flag}">${formatBalance(bal)}</span></td>
+            <td><button class="btn-ghost" data-bank-log="${escapeAttr(a.name)}">View ledger</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    `;
+    t.querySelectorAll('[data-bank-log]').forEach(b => b.addEventListener('click', () => openBankModal(b.dataset.bankLog)));
+  }
+
+  function openBankModal(name) {
+    document.getElementById('bankModalTitle').textContent = `${name} — Extra Hours Ledger`;
+    const log = ledgerEntries.filter(e => e.agent_name === name).slice().sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+    const earned = log.filter(e => e.entry_type==='earn').reduce((s,e) => s+(e.hours||0), 0);
+    const redeemed = log.filter(e => e.entry_type==='redeem').reduce((s,e) => s+(e.credits||1), 0);
+    const bal = balanceForAgent(name);
+    document.getElementById('bankModalBody').innerHTML = `
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div class="stat extra" style="flex:1"><div class="label">Earned (hrs)</div><div class="value">${earned}</div></div>
+        <div class="stat extra" style="flex:1"><div class="label">Redeemed</div><div class="value">${redeemed}</div></div>
+        <div class="stat extra" style="flex:1"><div class="label">Balance</div><div class="value">${formatBalance(bal)}</div></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <button class="btn-primary" id="manualAdjustBtn">Manual adjustment</button>
+      </div>
+      <div>
+        ${log.length === 0 ? '<div class="empty">No entries yet.</div>' :
+          log.map(e => {
+            const sign = e.entry_type==='earn' ? '+' : e.entry_type==='redeem' ? '−' : '±';
+            const amount = e.entry_type==='earn' ? `${e.hours} hrs (${formatBalance(e.credits || (e.hours||0)/state.settings.hoursPerCredit)} credits)` :
+                          e.entry_type==='redeem' ? `${e.credits||1} credit` : `${e.credits||0} credits`;
+            return `<div class="leave-list-item">
+              <div>
+                <div><strong>${sign} ${amount}</strong> · ${e.entry_type}</div>
+                <div style="font-size:12px;color:var(--muted)">${e.date_worked || (e.created_at||'').slice(0,10)}${e.note ? ' · ' + escapeHtml(e.note) : ''}${e.approved_by ? ' · approved by ' + escapeHtml(e.approved_by) : ''}</div>
+              </div>
+              <button class="btn-danger" data-del-ledger="${e.id}">Delete</button>
+            </div>`;
+          }).join('')}
+      </div>
+    `;
+    document.getElementById('manualAdjustBtn').addEventListener('click', () => promptManualAdjustment(name));
+    document.querySelectorAll('[data-del-ledger]').forEach(b => b.addEventListener('click', () => deleteLedgerEntry(b.dataset.delLedger, name)));
+    document.getElementById('bankModal').classList.add('show');
+  }
+  async function promptManualAdjustment(name) {
+    const credits = parseFloat(prompt('Adjustment in credits (positive to add, negative to remove):', '0'));
+    if (!credits) return;
+    const note = prompt('Reason (required):', '') || '';
+    if (!note) { alert('Reason required for adjustments.'); return; }
+    await addLedgerEntry(name, 'adjustment', { credits, note });
+    openBankModal(name); renderBank();
+  }
+  async function deleteLedgerEntry(id, name) {
+    if (!confirm('Delete this ledger entry? This will affect the agent\'s balance.')) return;
+    if (!supabaseConfigured) return;
+    await supabase.from('extra_hours_ledger').delete().eq('id', id);
+    await fetchAllSupabase();
+    openBankModal(name);
+  }
+
+  // ============== TRENDS ==============
+  function renderTrends() {
+    if (!trendFrom) trendFrom = addDays(todayISO(), -89);
+    if (!trendTo) trendTo = todayISO();
+    document.getElementById('trendFrom').value = trendFrom;
+    document.getElementById('trendTo').value = trendTo;
+
+    // Build daily series
+    const days = [];
+    let d = trendFrom;
+    while (d <= trendTo) { days.push(d); d = addDays(d, 1); }
+    const leaveCounts = days.map(date => manualLeaves.filter(l => date >= l.start_date && date <= l.end_date).length);
+
+    // Per-user accommodation totals (for ranking + multi-line chart)
+    const userAccomTotals = state.agents.map(a => {
+      let total = 0;
+      Object.keys(state.overrides).forEach(date => {
+        if (date < trendFrom || date > trendTo) return;
+        const o = state.overrides[date][a.id];
+        if (o && ACCOM_TYPES.includes(o.type)) total++;
+      });
+      return { agent: a, total };
+    }).filter(r => r.total > 0).sort((a,b) => b.total - a.total);
+
+    const top5 = userAccomTotals.slice(0, 5);
+    const lineColors = ['#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444'];
+    const top5Datasets = top5.map((r, i) => ({
+      label: r.agent.name,
+      data: days.map(date => {
+        const o = state.overrides[date]?.[r.agent.id];
+        return o && ACCOM_TYPES.includes(o.type) ? 1 : 0;
+      }).reduce((acc, val, idx) => {
+        // weekly running buckets — easier to read than daily 0/1
+        if (idx % 7 === 0) acc.push(0);
+        acc[acc.length - 1] += val;
+        return acc;
+      }, []),
+      borderColor: lineColors[i],
+      backgroundColor: 'transparent',
+      tension: 0.2,
+      fill: false
+    }));
+    // Build week labels matching the bucketed data
+    const weekLabels = [];
+    for (let i = 0; i < days.length; i += 7) weekLabels.push(`Week of ${days[i].slice(5)}`);
+
+    if (chartTrendAccom) chartTrendAccom.destroy();
+    if (top5.length === 0) {
+      document.getElementById('trendAccomChart').parentElement.innerHTML = '<div class="empty">No accommodations in this period.</div>';
+    } else {
+      chartTrendAccom = new Chart(document.getElementById('trendAccomChart').getContext('2d'), {
+        type:'line',
+        data:{ labels: weekLabels, datasets: top5Datasets },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{position:'bottom', labels:{font:{size:11}}} },
+          scales:{ x:{ ticks:{font:{size:10}, maxTicksLimit:12} },
+                   y:{ beginAtZero:true, ticks:{precision:0}, title:{display:true, text:'Accommodations / week'} } } }
+      });
+    }
+
+    if (chartTrendLeave) chartTrendLeave.destroy();
+    chartTrendLeave = new Chart(document.getElementById('trendLeaveChart').getContext('2d'), {
+      type:'line', data:{ labels: days, datasets:[{ label:'Leave days', data: leaveCounts,
+        borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.15)', fill:true, tension:0.2 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{ x:{ ticks:{font:{size:10}, maxTicksLimit:10} }, y:{ beginAtZero:true, ticks:{precision:0} } } }
+    });
+
+    // Coverage by hour x day-of-week
+    const hours = []; for (let h=6; h<=20; h++) hours.push(h);
+    const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dowOrder = [1,2,3,4,5,6,0];
+    const datasets = dowOrder.map((dowIdx, i) => {
+      const data = hours.map(h => {
+        let totalScheduled = 0, totalWorking = 0, samples = 0;
+        days.forEach(date => {
+          const dDow = new Date(date+'T00:00:00').getDay();
+          if (dDow !== dowIdx) return;
+          state.agents.forEach(a => {
+            const sh = SHIFT_HOURS[a.team]; if (!sh) return;
+            const onShift = h >= Math.floor(sh.start) && h < Math.ceil(sh.end);
+            if (!onShift) return;
+            const baseStatus = a.schedule[dDow] || 'off';
+            if (baseStatus === 'off') return;
+            totalScheduled++;
+            const s = statusForDate(a, date);
+            if (!['pto','jiffy_day','unpaid'].includes(s)) totalWorking++;
+          });
+          samples++;
+        });
+        return totalScheduled === 0 ? null : Math.round(100 * totalWorking / totalScheduled);
+      });
+      const colors = ['#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#a855f7'];
+      return { label: dowNames[dowIdx], data, borderColor: colors[i], backgroundColor: 'transparent', tension:0.2, fill:false };
+    });
+    if (chartTrendCoverage) chartTrendCoverage.destroy();
+    chartTrendCoverage = new Chart(document.getElementById('trendCoverageChart').getContext('2d'), {
+      type:'line', data:{ labels: hours.map(formatHour), datasets },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{position:'bottom', labels:{font:{size:11}}} },
+        scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback: v => v+'%' } } } }
+    });
+
+    // Top accommodation users table — break down by type per user
+    const accomUserDetails = state.agents.map(a => {
+      const counts = { accom_wfh:0, accom_early:0, accom_late:0, accom_office_change:0 };
+      Object.keys(state.overrides).forEach(date => {
+        if (date < trendFrom || date > trendTo) return;
+        const o = state.overrides[date][a.id];
+        if (o && counts[o.type] !== undefined) counts[o.type]++;
+      });
+      const total = counts.accom_wfh + counts.accom_early + counts.accom_late + counts.accom_office_change;
+      return { name:a.name, supervisor:a.supervisor||'', team:a.team||'', ...counts, total };
+    }).filter(r => r.total > 0).sort((a,b) => b.total - a.total).slice(0, 12);
+    document.getElementById('topUsersTable').innerHTML = `
+      <thead><tr><th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">Office</th><th class="num">Total</th></tr></thead>
+      <tbody>${accomUserDetails.length === 0 ? '<tr><td colspan="7" class="empty">None.</td></tr>' :
+        accomUserDetails.map(r => {
+          const flag = r.total >= 5 ? 'danger' : r.total >= 3 ? 'warn' : 'ok';
+          return `<tr><td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td>
+            <td>${escapeHtml(r.supervisor)}</td>
+            <td class="num">${r.accom_wfh || ''}</td>
+            <td class="num">${r.accom_early || ''}</td>
+            <td class="num">${r.accom_late || ''}</td>
+            <td class="num">${r.accom_office_change || ''}</td>
+            <td class="num"><span class="pill ${flag}">${r.total}</span></td></tr>`;
+        }).join('')}
+      </tbody>
+    `;
+
+    // Per-supervisor breakdown — accommodations only (leave is HR-approved policy)
+    const supervisorMap = {};
+    state.agents.forEach(a => {
+      const sup = a.supervisor || 'Unassigned';
+      if (!supervisorMap[sup]) supervisorMap[sup] = { teamSize:0, accom_wfh:0, accom_early:0, accom_late:0, accom_office_change:0, total:0 };
+      supervisorMap[sup].teamSize++;
+      Object.keys(state.overrides).forEach(date => {
+        if (date < trendFrom || date > trendTo) return;
+        const o = state.overrides[date][a.id];
+        if (o && ACCOM_TYPES.includes(o.type)) {
+          supervisorMap[sup][o.type]++;
+          supervisorMap[sup].total++;
+        }
+      });
+    });
+    const supRows = Object.entries(supervisorMap).map(([name, c]) => ({
+      name, ...c, perAgent: c.teamSize === 0 ? 0 : (c.total / c.teamSize).toFixed(1)
+    })).sort((a,b) => b.total - a.total);
+    document.getElementById('supervisorBreakdownTable').innerHTML = `
+      <thead><tr><th>Supervisor</th><th class="num">Team size</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">Office swap</th><th class="num">Total</th><th class="num">Per agent</th></tr></thead>
+      <tbody>${supRows.map(r => `<tr><td><strong>${escapeHtml(r.name)}</strong></td>
+        <td class="num">${r.teamSize}</td>
+        <td class="num">${r.accom_wfh || ''}</td>
+        <td class="num">${r.accom_early || ''}</td>
+        <td class="num">${r.accom_late || ''}</td>
+        <td class="num">${r.accom_office_change || ''}</td>
+        <td class="num"><strong>${r.total}</strong></td>
+        <td class="num">${r.perAgent}</td></tr>`).join('')}
+      </tbody>
+    `;
+  }
+
+  // ============== SCHEDULE VIEW ==============
+  function statusLetter(s) {
+    return ({ office:'O', wfh:'W', accom_wfh:'A', accom_early:'E', accom_late:'L',
+             accom_office_change:'C', extra_hours_wfh:'+', pto:'P', jiffy_day:'J',
+             unpaid:'U', off:'—' })[s] || '?';
+  }
+
+  function buildSchedDays() {
+    const ref = schedStart;
+    if (schedPeriod === 'day') return [ref];
+    if (schedPeriod === 'week') {
+      const start = startOfWeek(ref);
+      return [0,1,2,3,4,5,6].map(i => addDays(start, i));
+    }
+    // month
+    const [y, m] = ref.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    const days = [];
+    for (let d = 1; d <= lastDay; d++) {
+      days.push(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+    }
+    return days;
+  }
+
+  // ============== SCHEDULE (day-cards calendar layout) ==============
+  function buildDays(start, period) {
+    if (period === 'day') return [start];
+    if (period === 'week') {
+      const d = new Date(start + 'T00:00:00');
+      d.setDate(d.getDate() - d.getDay());
+      const sunStart = isoFromDate(d);
+      return [0,1,2,3,4,5,6].map(i => addDays(sunStart, i));
+    }
+    const [y, m] = start.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    const days = [];
+    for (let dd = 1; dd <= lastDay; dd++) {
+      days.push(`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);
+    }
+    return days;
+  }
+
+  function renderSchedule() {
+    document.getElementById('schedDate').value = schedStart;
+    populateSelect('schedSupervisor', schedSupervisor);
+    document.getElementById('schedSort').value = schedSort;
+    document.querySelectorAll('#periodToggle button').forEach(b =>
+      b.classList.toggle('active', b.dataset.period === schedPeriod));
+
+    const days = buildDays(schedStart, schedPeriod);
+    const today = todayISO();
+
+    let agents = state.agents.slice();
+    if (schedSearch) agents = agents.filter(a => a.name.toLowerCase().includes(schedSearch.toLowerCase()));
+    if (schedSupervisor) agents = agents.filter(a => a.supervisor === schedSupervisor);
+    if (schedSort === 'name') agents.sort((a,b) => a.name.localeCompare(b.name));
+    else if (schedSort === 'supervisor') agents.sort((a,b) => (a.supervisor||'').localeCompare(b.supervisor||'') || a.name.localeCompare(b.name));
+    else {
+      const teamRank = (t) => { const i = TEAM_ORDER.indexOf(t); return i === -1 ? 99 : i; };
+      agents.sort((a,b) => teamRank(a.team||'') - teamRank(b.team||'') || (a.team||'').localeCompare(b.team||'') || a.name.localeCompare(b.name));
+    }
+
+    const cards = days.map(date => renderDayCard(date, agents, today)).join('');
+    document.getElementById('schedTable').innerHTML =
+      `<div class="sched-cards period-${schedPeriod}">${cards}</div>`;
+
+    document.querySelectorAll('#schedTable .agent-name-row[data-date], #schedTable .day-card-date[data-date]').forEach(el =>
+      el.addEventListener('click', () => {
+        selectedDate = el.dataset.date;
+        activeTab = 'daily';
+        document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === 'daily'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-daily'));
+        render();
+      })
+    );
+  }
+
+  function renderDayCard(date, agents, today) {
+    const d = new Date(date+'T00:00:00');
+    const dow = d.getDay();
+    const isToday = date === today;
+    const isWknd = dow === 0 || dow === 6;
+    const dayLabel = d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+
+    const buckets = { office:[], wfh:[], accom:[], extra:[], pto:[], jiffy:[], unpaid:[], off:[] };
+    agents.forEach(a => {
+      const s = statusForDate(a, date);
+      if (s === 'office' || s === 'accom_office_change') buckets.office.push({a, s});
+      else if (s === 'wfh') buckets.wfh.push({a, s});
+      else if (s === 'accom_wfh' || s === 'accom_early' || s === 'accom_late') buckets.accom.push({a, s});
+      else if (s === 'extra_hours_wfh') buckets.extra.push({a, s});
+      else if (s === 'pto') buckets.pto.push({a, s});
+      else if (s === 'jiffy_day') buckets.jiffy.push({a, s});
+      else if (s === 'unpaid') buckets.unpaid.push({a, s});
+      else if (s === 'off') buckets.off.push({a, s});
+    });
+    const scheduled = agents.filter(a => (a.schedule[dow] || 'off') !== 'off').length;
+    const onLeave = buckets.pto.length + buckets.jiffy.length + buckets.unpaid.length;
+    const working = scheduled - onLeave;
+    const coverage = scheduled === 0 ? null : Math.round(100 * working / scheduled);
+    const covCls = coverage === null ? '' :
+      coverage >= state.settings.coverageGreen ? 'good' :
+      coverage >= state.settings.coverageAmber ? 'ok' : 'bad';
+
+    const section = (label, swatchCls, items) => {
+      if (items.length === 0) return '';
+      return `
+        <div class="status-section">
+          <div class="status-section-head">
+            <span class="label"><span class="swatch s-${swatchCls}"></span>${label}</span>
+            <span class="count">${items.length}</span>
+          </div>
+          <div class="agent-names">${items.map(({a, s}) => {
+            const tag = (s === 'accom_wfh' || s === 'accom_early' || s === 'accom_late' || s === 'accom_office_change') ?
+              ` <span class="tag">${STATUSES[s].short.replace('Accom ', '').replace('Office chg','swap')}</span>` : '';
+            return `<div class="agent-name-row" data-date="${date}" title="Click to view">${escapeHtml(a.name)}${tag}</div>`;
+          }).join('')}</div>
+        </div>`;
+    };
+
+    const total = buckets.office.length + buckets.wfh.length + buckets.accom.length + buckets.extra.length +
+                  buckets.pto.length + buckets.jiffy.length + buckets.unpaid.length + buckets.off.length;
+
+    return `
+      <div class="day-card ${isToday?'today':''} ${isWknd?'weekend':''}">
+        <div class="day-card-head">
+          <div class="day-card-date" data-date="${date}" title="Click to view this day">${dayLabel}</div>
+          ${coverage === null ? '' : `<div class="day-card-cov cov-${covCls}">${coverage}%</div>`}
+        </div>
+        <div class="day-card-summary">
+          <b>${working}</b>/${scheduled} working · <b>${buckets.office.length}</b> office · <b>${buckets.wfh.length + buckets.accom.length + buckets.extra.length}</b> WFH${onLeave ? ' · <b>' + onLeave + '</b> on leave' : ''}
+        </div>
+        ${section('In Office', 'office', buckets.office)}
+        ${section('Regular WFH', 'wfh', buckets.wfh)}
+        ${section('Accommodations', 'accom', buckets.accom)}
+        ${section('Extra Hrs WFH', 'extra', buckets.extra)}
+        ${section('PTO', 'pto', buckets.pto)}
+        ${section('Jiffy Day', 'jiffy', buckets.jiffy)}
+        ${section('Unpaid', 'unpaid', buckets.unpaid)}
+        ${section('Day Off', 'off', buckets.off)}
+        ${total === 0 ? '<div class="day-card-empty">No agents</div>' : ''}
+      </div>
+    `;
+  }
+
+  // ============== COVERAGE HEATMAP (separate page) ==============
+  function renderCoverage() {
+    document.getElementById('covDate').value = covStart;
+    populateSelect('covSupervisor', covSupervisor);
+    document.querySelectorAll('#covPeriodToggle button').forEach(b =>
+      b.classList.toggle('active', b.dataset.period === covPeriod));
+
+    const today = todayISO();
+    const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    let displayDays;
+    if (covPeriod === 'day') displayDays = [covStart];
+    else if (covPeriod === 'week') {
+      const d = new Date(covStart + 'T00:00:00');
+      d.setDate(d.getDate() - d.getDay());
+      const sunStart = isoFromDate(d);
+      displayDays = [0,1,2,3,4,5,6].map(i => addDays(sunStart, i));
+    } else {
+      const [y, m] = covStart.split('-').map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+      displayDays = [];
+      for (let dd = 1; dd <= lastDay; dd++) {
+        displayDays.push(`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);
+      }
+    }
+
+    let agents = state.agents.slice();
+    if (covSupervisor) agents = agents.filter(a => a.supervisor === covSupervisor);
+
+    const slots = [];
+    for (let h = 6; h <= 20; h++) {
+      slots.push({ value: h, label: `${String(h).padStart(2,'0')}:00`, onHour: true });
+      if (h < 20) slots.push({ value: h + 0.5, label: `${String(h).padStart(2,'0')}:30`, onHour: false });
+    }
+
+    const matrix = slots.map(slot => displayDays.map(date => {
+      const dow = new Date(date+'T00:00:00').getDay();
+      let count = 0;
+      agents.forEach(a => {
+        const sh = SHIFT_HOURS[a.team]; if (!sh) return;
+        if (slot.value < sh.start || slot.value >= sh.end) return;
+        if ((a.schedule[dow] || 'off') === 'off') return;
+        const s = statusForDate(a, date);
+        if (['pto','jiffy_day','unpaid'].includes(s)) return;
+        count++;
+      });
+      return count;
+    }));
+    const max = Math.max(1, ...matrix.flat());
+
+    let html = '<div class="staff-heatmap-wrap">';
+    html += `<div class="staff-heatmap-title">
+      Total staffed by time slot
+      <div class="legend">
+        Light = fewer
+        <span class="scale">
+          <span style="background:hsl(213, 85%, 95%)"></span>
+          <span style="background:hsl(213, 85%, 80%)"></span>
+          <span style="background:hsl(213, 85%, 65%)"></span>
+          <span style="background:hsl(213, 85%, 50%)"></span>
+          <span style="background:hsl(213, 85%, 40%)"></span>
+        </span>
+        Dark = more (peak: ${max})
+      </div>
+    </div>`;
+    html += '<div class="staff-heatmap-overflow"><table class="staff-heatmap">';
+    html += '<thead><tr><th class="time-col">Time</th>';
+    displayDays.forEach(date => {
+      const d = new Date(date+'T00:00:00');
+      const dow = d.getDay();
+      const isToday = date === today;
+      html += `<th class="day-col ${isToday?'today':''}">${dowNames[dow]}<div class="date-sub">${d.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div></th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    slots.forEach((slot, slotIdx) => {
+      const cls = slot.onHour && slotIdx > 0 ? 'boundary' : '';
+      html += `<tr class="${cls}"><td class="time-col">${slot.label}</td>`;
+      displayDays.forEach((date, dayIdx) => {
+        const count = matrix[slotIdx][dayIdx];
+        if (count === 0) {
+          html += `<td class="staff-cell empty">—</td>`;
+        } else {
+          const ratio = count / max;
+          const lightness = Math.round(95 - ratio * 55);
+          const fontColor = ratio > 0.5 ? 'white' : '#1e3a8a';
+          html += `<td class="staff-cell" style="background:hsl(213, 85%, ${lightness}%); color:${fontColor}" data-date="${date}" data-slot="${slot.label}" data-slot-value="${slot.value}" title="${count} staffed — click for details">${count}</td>`;
+        }
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+    document.getElementById('covContainer').innerHTML = html;
+
+    document.querySelectorAll('#covContainer .staff-cell[data-date]').forEach(el =>
+      el.addEventListener('click', () => showCoverageDetail(el.dataset.date, el.dataset.slot, parseFloat(el.dataset.slotValue)))
+    );
+  }
+
+  function showCoverageDetail(date, slotLabel, slotValue) {
+    let agents = state.agents.slice();
+    if (covSupervisor) agents = agents.filter(a => a.supervisor === covSupervisor);
+    const dow = new Date(date+'T00:00:00').getDay();
+    const staffed = [], missing = [];
+    agents.forEach(a => {
+      const sh = SHIFT_HOURS[a.team]; if (!sh) return;
+      if (slotValue < sh.start || slotValue >= sh.end) return;
+      if ((a.schedule[dow] || 'off') === 'off') return;
+      const s = statusForDate(a, date);
+      if (['pto','jiffy_day','unpaid'].includes(s)) missing.push({a, s});
+      else staffed.push({a, s});
+    });
+    const d = new Date(date+'T00:00:00').toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+    document.getElementById('covDetailTitle').textContent =
+      `${d} at ${slotLabel} — ${staffed.length} staffed · ${missing.length} missing`;
+
+    const renderList = (items, emptyMsg) =>
+      items.length === 0 ? `<div class="empty" style="padding:14px">${emptyMsg}</div>` :
+      items.map(({a, s}) => `
+        <div class="leave-list-item">
+          <div>
+            <strong>${escapeHtml(a.name)}</strong>
+            <div style="font-size:11px;color:var(--muted)">${escapeHtml(a.supervisor||'')} · ${escapeHtml(a.team||'')}</div>
+          </div>
+          <span class="status-pill ${STATUSES[s].class}" style="display:inline-flex; padding:3px 9px; font-size:11px">${STATUSES[s].label}</span>
+        </div>
+      `).join('');
+
+    document.getElementById('covDetailBody').innerHTML = `
+      <div style="font-size:13px; color:var(--muted); margin-bottom:14px">
+        Click a name to jump to that day's full Daily Status.
+      </div>
+      <h3 style="font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin:0 0 8px;">Staffed (${staffed.length})</h3>
+      ${renderList(staffed, 'No one staffed in this slot.')}
+      <h3 style="font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin:18px 0 8px;">Missing — scheduled but on leave (${missing.length})</h3>
+      ${renderList(missing, 'No one missing — full coverage.')}
+    `;
+    document.getElementById('covDetailBody').querySelectorAll('.leave-list-item').forEach((el, i) => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => {
+        document.getElementById('covDetailModal').classList.remove('show');
+        selectedDate = date;
+        activeTab = 'daily';
+        document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === 'daily'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-daily'));
+        render();
+      });
+    });
+    document.getElementById('covDetailModal').classList.add('show');
+  }
+
+  function shiftCov(direction) {
+    if (covPeriod === 'day') covStart = addDays(covStart, direction);
+    else if (covPeriod === 'week') covStart = addDays(covStart, direction * 7);
+    else {
+      const [y, m] = covStart.split('-').map(Number);
+      covStart = isoFromDate(new Date(y, m - 1 + direction, 1));
+    }
+    renderCoverage();
+  }
+
+  function shiftSched(direction) {
+    if (schedPeriod === 'day') {
+      schedStart = addDays(schedStart, direction);
+    } else if (schedPeriod === 'week') {
+      schedStart = addDays(schedStart, direction * 7);
+    } else {
+      const [y, m] = schedStart.split('-').map(Number);
+      const newDate = new Date(y, m - 1 + direction, 1);
+      schedStart = isoFromDate(newDate);
+    }
+    renderSchedule();
+  }
+
+  // ============== DISPATCHER ==============
+  function render() {
+    if (activeTab === 'daily')    renderDaily();
+    if (activeTab === 'monthly')  renderSchedule();
+    if (activeTab === 'coverage') renderCoverage();
+    if (activeTab === 'pending')  renderPending();
+    if (activeTab === 'leave')    renderLeave();
+    if (activeTab === 'usage')    renderUsage();
+    if (activeTab === 'bank')     renderBank();
+    if (activeTab === 'trends')   renderTrends();
+  }
+
+  // ============== STATIC SCHEDULE EDITOR ==============
+  function openScheduleModal() { renderScheduleTable(); document.getElementById('scheduleModal').classList.add('show'); }
+  function renderScheduleTable() {
+    const t = document.getElementById('scheduleTable');
+    const rows = [...state.agents].sort((a,b) => (a.team||'').localeCompare(b.team||'') || a.name.localeCompare(b.name));
+    t.innerHTML = `
+      <thead><tr>
+        <th style="text-align:left;padding-left:12px">Agent</th>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th></th>
+      </tr></thead>
+      <tbody>${rows.map(a => `
+        <tr>
+          <td class="name">
+            <input type="text" value="${escapeAttr(a.name)}" data-rename="${a.id}" style="border:none; background:transparent; font-weight:600; width:100%; padding:2px 4px;" />
+            <div style="font-size:10px;color:var(--muted);padding-left:4px">${escapeHtml(a.supervisor||'')} · ${escapeHtml(a.team||'')}</div>
+          </td>
+          ${[1,2,3,4,5,6].map(dow => {
+            const s = a.schedule[dow] || 'off';
+            return `<td><span class="day-cell ${s}" data-cycle="${a.id}|${dow}">${s === 'office'?'Office':s === 'wfh'?'WFH':'Off'}</span></td>`;
+          }).join('')}
+          <td><button class="btn-danger" data-delete-agent="${a.id}" style="padding:4px 8px;font-size:11px">Delete</button></td>
+        </tr>`).join('')}</tbody>
+    `;
+    t.querySelectorAll('[data-cycle]').forEach(c => c.addEventListener('click', () => {
+      const [id, dow] = c.dataset.cycle.split('|');
+      const a = state.agents.find(x => x.id === id);
+      const cur = a.schedule[dow] || 'off';
+      a.schedule[dow] = cur === 'office' ? 'wfh' : cur === 'wfh' ? 'off' : 'office';
+      saveState(); renderScheduleTable(); render();
+    }));
+    t.querySelectorAll('[data-rename]').forEach(inp => inp.addEventListener('change', e => {
+      const a = state.agents.find(x => x.id === e.target.dataset.rename);
+      if (a && e.target.value.trim()) { a.name = e.target.value.trim(); saveState(); renderScheduleTable(); render(); }
+    }));
+    t.querySelectorAll('[data-delete-agent]').forEach(b => b.addEventListener('click', () => {
+      const a = state.agents.find(x => x.id === b.dataset.deleteAgent);
+      if (!confirm(`Delete agent "${a.name}"?`)) return;
+      state.agents = state.agents.filter(x => x.id !== a.id);
+      saveState(); renderScheduleTable(); render();
+    }));
+  }
+  function addAgent() {
+    const n = document.getElementById('newAgentName').value.trim();
+    const s = document.getElementById('newAgentSupervisor').value.trim();
+    const t = document.getElementById('newAgentTeam').value.trim();
+    if (!n) return;
+    state.agents.push({ id: uid(), name:n, supervisor:s, team:t,
+      schedule:{1:'office',2:'office',3:'office',4:'office',5:'office',6:'off',0:'off'} });
+    saveState(); renderScheduleTable(); render();
+    document.getElementById('newAgentName').value = '';
+    document.getElementById('newAgentSupervisor').value = '';
+    document.getElementById('newAgentTeam').value = '';
+  }
+
+  // ============== HELPERS ==============
+  function formatBalance(b) {
+    if (b === null || b === undefined || isNaN(b)) return '0';
+    if (Number.isInteger(b)) return b;
+    return b.toFixed(2).replace(/\.?0+$/, '');
+  }
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function escapeAttr(s){return escapeHtml(s);}
+
+  // ============== WIRE UP ==============
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    activeTab = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${activeTab}`));
+    render();
+  }));
+  document.getElementById('datePicker').addEventListener('change', e => { selectedDate = e.target.value || todayISO(); render(); });
+  document.getElementById('todayBtn').addEventListener('click', () => { selectedDate = todayISO(); render(); });
+  document.getElementById('searchInput').addEventListener('input', e => { searchText = e.target.value; if (activeTab==='daily') render(); });
+  document.getElementById('supervisorFilter').addEventListener('change', e => { supervisorFilter = e.target.value; if (activeTab==='daily') render(); });
+  document.getElementById('clearOverridesBtn').addEventListener('click', clearAllOverridesForDay);
+  document.querySelectorAll('#viewToggle button').forEach(b => b.addEventListener('click', () => {
+    viewMode = b.dataset.view;
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.toggle('active', x === b));
+    render();
+  }));
+  document.querySelectorAll('#groupToggle button').forEach(b => b.addEventListener('click', () => {
+    groupMode = b.dataset.group;
+    document.querySelectorAll('#groupToggle button').forEach(x => x.classList.toggle('active', x === b));
+    render();
+  }));
+  document.querySelectorAll('#periodToggle button').forEach(b => b.addEventListener('click', () => {
+    schedPeriod = b.dataset.period; renderSchedule();
+  }));
+  document.getElementById('schedDate').addEventListener('change', e => { schedStart = e.target.value || todayISO(); renderSchedule(); });
+  document.getElementById('schedPrev').addEventListener('click', () => shiftSched(-1));
+  document.getElementById('schedNext').addEventListener('click', () => shiftSched(1));
+  document.getElementById('schedToday').addEventListener('click', () => { schedStart = todayISO(); renderSchedule(); });
+  document.getElementById('schedSearch').addEventListener('input', e => { schedSearch = e.target.value; renderSchedule(); });
+  document.getElementById('schedSupervisor').addEventListener('change', e => { schedSupervisor = e.target.value; renderSchedule(); });
+  document.getElementById('schedSort').addEventListener('change', e => { schedSort = e.target.value; renderSchedule(); });
+  document.querySelectorAll('#covPeriodToggle button').forEach(b => b.addEventListener('click', () => { covPeriod = b.dataset.period; renderCoverage(); }));
+  document.getElementById('covDate').addEventListener('change', e => { covStart = e.target.value || todayISO(); renderCoverage(); });
+  document.getElementById('covPrev').addEventListener('click', () => shiftCov(-1));
+  document.getElementById('covNext').addEventListener('click', () => shiftCov(1));
+  document.getElementById('covToday').addEventListener('click', () => { covStart = todayISO(); renderCoverage(); });
+  document.getElementById('covSupervisor').addEventListener('change', e => { covSupervisor = e.target.value; renderCoverage(); });
+  document.getElementById('refreshPendingBtn').addEventListener('click', fetchAllSupabase);
+  document.getElementById('pendingFilter').addEventListener('change', e => { pendingFilter = e.target.value; render(); });
+  document.getElementById('pendingSupervisor').addEventListener('change', e => { pendingSupervisorFilter = e.target.value; render(); });
+  document.getElementById('addLeaveBtn').addEventListener('click', addLeave);
+  document.getElementById('leaveListFilter').addEventListener('change', e => { leaveListFilter = e.target.value; renderLeaveList(); });
+  document.getElementById('leaveTypeFilter').addEventListener('change', e => { leaveTypeFilter = e.target.value; renderLeaveList(); });
+  document.getElementById('usageFrom').addEventListener('change', e => { usageFrom = e.target.value; renderUsage(); });
+  document.getElementById('usageTo').addEventListener('change', e => { usageTo = e.target.value; renderUsage(); });
+  document.getElementById('usageQuickWeek').addEventListener('click', () => { usageFrom = startOfWeek(todayISO()); usageTo = endOfWeek(todayISO()); renderUsage(); });
+  document.getElementById('usageQuickMonth').addEventListener('click', () => {
+    const d = new Date(); usageFrom = isoFromDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    usageTo = isoFromDate(new Date(d.getFullYear(), d.getMonth()+1, 0)); renderUsage();
+  });
+  document.getElementById('usageQuick90').addEventListener('click', () => { usageFrom = addDays(todayISO(), -89); usageTo = todayISO(); renderUsage(); });
+  document.getElementById('usageSupervisor').addEventListener('change', e => { usageSupervisor = e.target.value; renderUsage(); });
+  document.getElementById('exportUsageBtn').addEventListener('click', exportUsageCSV);
+  document.getElementById('bankSearch').addEventListener('input', e => { bankSearch = e.target.value; renderBank(); });
+  document.getElementById('bankSupervisor').addEventListener('change', e => { bankSupervisor = e.target.value; renderBank(); });
+  document.getElementById('trendFrom').addEventListener('change', e => { trendFrom = e.target.value; renderTrends(); });
+  document.getElementById('trendTo').addEventListener('change', e => { trendTo = e.target.value; renderTrends(); });
+  document.getElementById('trendQuick30').addEventListener('click', () => { trendFrom = addDays(todayISO(), -29); trendTo = todayISO(); renderTrends(); });
+  document.getElementById('trendQuick90').addEventListener('click', () => { trendFrom = addDays(todayISO(), -89); trendTo = todayISO(); renderTrends(); });
+  document.getElementById('editScheduleBtn').addEventListener('click', openScheduleModal);
+  document.getElementById('addAgentBtn').addEventListener('click', addAgent);
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    document.getElementById('settingFlexLimit').value = state.settings.flexLimitPerWeek;
+    document.getElementById('settingHoursPerCredit').value = state.settings.hoursPerCredit;
+    document.getElementById('settingOtCutoff').value = state.settings.otCutoffDays;
+    document.getElementById('settingCovGreen').value = state.settings.coverageGreen;
+    document.getElementById('settingCovAmber').value = state.settings.coverageAmber;
+    document.getElementById('settingWeekStart').value = state.settings.weekStart;
+    document.getElementById('settingsModal').classList.add('show');
+  });
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    state.settings.flexLimitPerWeek = parseInt(document.getElementById('settingFlexLimit').value,10) || 1;
+    state.settings.hoursPerCredit = parseFloat(document.getElementById('settingHoursPerCredit').value) || 4;
+    state.settings.otCutoffDays = parseInt(document.getElementById('settingOtCutoff').value,10) || 14;
+    state.settings.coverageGreen = parseInt(document.getElementById('settingCovGreen').value,10) || 95;
+    state.settings.coverageAmber = parseInt(document.getElementById('settingCovAmber').value,10) || 85;
+    state.settings.weekStart = parseInt(document.getElementById('settingWeekStart').value,10);
+    saveState();
+    document.getElementById('settingsModal').classList.remove('show');
+    render();
+  });
+  document.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', () => b.closest('.modal-backdrop').classList.remove('show')));
+  document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }));
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `agent-tracker-${todayISO()}.json`; a.click(); URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data && Array.isArray(data.agents)) {
+          if (!confirm('Replace current data with imported file?')) return;
+          state = data; if (!state.overrides) state.overrides = {};
+          if (!state.settings) state.settings = defaultSettings();
+          saveState(); render();
+        } else alert('Invalid file.');
+      } catch(err) { alert('Could not parse: ' + err.message); }
+    };
+    r.readAsText(file); e.target.value = '';
+  });
+
+  // Initial render
+  render();
+  if (supabaseConfigured) {
+    fetchAllSupabase();
+    setInterval(fetchAllSupabase, 30000);
+  }
+</script>
+</body>
+</html>
