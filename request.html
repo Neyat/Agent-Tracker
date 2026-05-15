@@ -33,7 +33,6 @@
   .pill.active.accom { background:var(--accom); }
   .pill.active.ot_claim { background:var(--extra); }
   .pill.active.extra_hours_wfh { background:var(--extra); }
-
   .sub-pills { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);
     display:flex; flex-wrap:wrap; gap:6px; }
   .sub-pill { padding:6px 11px; border-radius:8px; font-size:12px; cursor:pointer;
@@ -42,19 +41,16 @@
   .sub-pill.active.accom_early { background:var(--accom-early); color:white; border-color:var(--accom-early); }
   .sub-pill.active.accom_late { background:var(--accom-late); color:white; border-color:var(--accom-late); }
   .sub-pill.active.accom_office_change { background:var(--accom-office); color:white; border-color:var(--accom-office); }
-
   button.submit { width:100%; padding:12px 16px; background:var(--primary); color:white;
     border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-top:6px; }
   button.submit:hover { background:var(--primary-dark); }
   button.submit:disabled { opacity:0.5; cursor:not-allowed; }
   button.submit.warning { background:var(--warn); }
   button.submit.warning:hover { background:#92400e; }
-
   .toast { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none; }
   .toast.show { display:block; }
   .toast.ok { background:#dcfce7; color:#166534; border:1px solid #86efac; }
   .toast.err { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
-
   .rule-banner { padding:10px 12px; border-radius:8px; font-size:13px; margin-bottom:12px;
     display:none; line-height:1.45; }
   .rule-banner.show { display:block; }
@@ -63,10 +59,8 @@
   .rule-banner.danger { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
   .rule-banner.bank { background:#ccfbf1; color:#0f766e; border:1px solid #5eead4; }
   .rule-banner strong { font-weight:700; }
-
   .row-2 { display:flex; gap:10px; }
   .row-2 > * { flex:1; min-width:0; }
-
   .history { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
   .h-title { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;
     font-weight:600; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
@@ -88,7 +82,6 @@
   .status.denied { background:#fee2e2; color:#991b1b; }
   .status.cancelled { background:#f3f4f6; color:#6b7280; }
   .empty { color:var(--muted); font-size:13px; padding:12px; text-align:center; }
-
   .config-warn { background:#fef3c7; border:1px solid #fde68a; color:#92400e;
     padding:12px; border-radius:8px; margin-bottom:14px; font-size:13px; }
   .type-detail { display:none; padding:10px; background:#f9fafb; border-radius:8px;
@@ -96,7 +89,6 @@
   .type-detail.show { display:block; }
   .type-detail h4 { margin:0 0 8px; font-size:13px; color:var(--muted); }
   .type-help { font-size:12px; color:var(--muted); margin-top:6px; }
-
   /* Confirmation modal */
   .modal-backdrop { position:fixed; inset:0; background:rgba(15, 23, 42, 0.6);
     display:none; align-items:center; justify-content:center; z-index:100; padding:16px; }
@@ -129,22 +121,17 @@
 <div class="wrap">
   <h1>Submit a request</h1>
   <p class="lede">Pick what you need. Your supervisor will be notified and review it.</p>
-
   <div id="configWarn" class="config-warn" style="display:none">
     <strong>Setup required:</strong> Supabase keys haven't been added to this file. See SETUP.md.
   </div>
-
   <div id="toast" class="toast"></div>
-
   <div class="card">
     <form id="reqForm">
       <div class="field">
         <label class="fl" for="agent">Your name</label>
         <select id="agent" required><option value="">Select your name…</option></select>
       </div>
-
       <div id="balanceBanner" class="rule-banner bank"></div>
-
       <div class="field">
         <label class="fl">What kind of request?</label>
         <div class="pills" id="topPills">
@@ -153,7 +140,6 @@
           <span class="pill" data-top="ot_claim">Claim OT (earn credits)</span>
         </div>
       </div>
-
       <!-- Accommodation sub-types -->
       <div class="type-detail" id="accomDetail">
         <h4>Accommodation type</h4>
@@ -164,27 +150,22 @@
           <span class="sub-pill" data-sub="accom_office_change">Change my office day</span>
         </div>
       </div>
-
       <!-- Date -->
       <div class="field">
         <label class="fl" for="date">Date</label>
         <input type="date" id="date" required />
       </div>
-
       <!-- Inline rule status (populated based on type+date) -->
       <div id="ruleStatus" class="rule-banner"></div>
-
       <!-- Reason (accommodation) -->
       <div class="field" id="reasonField">
         <label class="fl" for="reason">Reason</label>
         <textarea id="reason" rows="2" placeholder="Brief context — appointment, childcare, etc."></textarea>
       </div>
-
       <div class="field" id="coverageField">
         <label class="fl" for="coverage">Coverage plan <span style="color:var(--muted); font-weight:400">(optional)</span></label>
         <textarea id="coverage" rows="2" placeholder="How will you stay covered?"></textarea>
       </div>
-
       <!-- OT claim fields -->
       <div class="type-detail" id="otDetail">
         <h4>Overtime details</h4>
@@ -209,12 +190,10 @@
           <label class="fl">Pre-authorized by <span style="color:var(--muted); font-weight:400">(optional)</span></label>
           <input type="text" id="otAuth" placeholder="Supervisor name" />
         </div>
-        <p class="type-help">You'll earn 1 credit per 4 hours of approved OT. Submit within 14 days of the date worked.</p>
+        <p class="type-help">You'll earn 1 credit per 4 hours of approved OT. No submission deadline — claim whenever.</p>
       </div>
-
       <button type="submit" class="submit" id="submitBtn">Review &amp; submit</button>
     </form>
-
     <div class="history">
       <div class="h-title">
         Your recent requests
@@ -228,7 +207,6 @@
     </div>
   </div>
 </div>
-
 <!-- Confirmation Modal -->
 <div class="modal-backdrop" id="confirmModal">
   <div class="modal">
@@ -243,7 +221,6 @@
     </div>
   </div>
 </div>
-
 <script type="module">
   // === CONFIG — paste your Supabase keys here ===
   const SUPABASE_URL = 'https://kjaoapqungpjeowwhegj.supabase.co';
@@ -256,9 +233,8 @@
   // === Rules ===
   const ACCOM_WFH_WEEKLY_CAP = 1;
   const HOURS_PER_CREDIT = 4;
-  const OT_CUTOFF_DAYS = 14;
+  // OT claim cutoff REMOVED — agents can submit OT claims at any time, no deadline.
   // ============================================
-
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const configured = !SUPABASE_URL.startsWith('PASTE_') && !SUPABASE_ANON_KEY.startsWith('PASTE_');
   if (!configured) {
@@ -273,7 +249,6 @@
     s.onload = () => window.emailjs.init(EMAILJS_PUBLIC_KEY);
     document.head.appendChild(s);
   }
-
   const AGENTS = [
     { name:"Rosa Nuno", supervisor:"Angy", team:"6:00–2:30" },
     { name:"Cristie Avant", supervisor:"Angy", team:"6:00–2:30" },
@@ -313,18 +288,15 @@
     extra_hours_wfh:'Use Extra Hrs WFH (earned reward)',
     ot_claim:'Claim OT — earn credits'
   };
-
   // ---- Populate agent dropdown ----
   const agentSel = document.getElementById('agent');
   AGENTS.sort((a,b) => a.name.localeCompare(b.name)).forEach(a => {
     const opt = document.createElement('option');
     opt.value = a.name; opt.textContent = a.name; agentSel.appendChild(opt);
   });
-
   let currentBalance = 0;
   let weeklyAccomWfhUsed = 0;
   let pendingOrApprovedThisWeek = [];
-
   const last = localStorage.getItem('reqAgent');
   if (last) {
     agentSel.value = last;
@@ -337,7 +309,6 @@
     loadHistory(agentSel.value);
     updateRuleStatus();
   });
-
   // ---- Defaults ----
   const todayISO = () => {
     const d = new Date();
@@ -345,7 +316,6 @@
   };
   document.getElementById('date').value = todayISO();
   document.getElementById('date').addEventListener('change', updateRuleStatus);
-
   // ---- Top type pills ----
   let topType = '';
   let accomSubType = '';
@@ -367,7 +337,6 @@
     accomSubType = p.dataset.sub;
     updateRuleStatus();
   }));
-
   // ---- OT hours calc ----
   function recalcOtHours() {
     const s = document.getElementById('otStart').value;
@@ -383,7 +352,6 @@
   }
   document.getElementById('otStart').addEventListener('change', recalcOtHours);
   document.getElementById('otEnd').addEventListener('change', recalcOtHours);
-
   // ---- Context: balance + weekly accom usage ----
   async function refreshContext(name) {
     if (!name || !configured) return;
@@ -404,7 +372,6 @@
       banner.classList.remove('show');
     }
   }
-
   async function refreshWeeklyAccom(name, dateISO) {
     if (!name || !configured) { weeklyAccomWfhUsed = 0; pendingOrApprovedThisWeek = []; return; }
     // Sun-Sat week containing dateISO
@@ -420,7 +387,6 @@
     pendingOrApprovedThisWeek = data || [];
     weeklyAccomWfhUsed = pendingOrApprovedThisWeek.length;
   }
-
   // ---- Inline rule status ----
   async function updateRuleStatus() {
     const banner = document.getElementById('ruleStatus');
@@ -432,7 +398,6 @@
     banner.innerHTML = '';
     const date = document.getElementById('date').value;
     if (!agentSel.value || !topType || !date) return;
-
     if (topType === 'accom' && accomSubType === 'accom_wfh') {
       await refreshWeeklyAccom(agentSel.value, date);
       banner.classList.add('show');
@@ -458,27 +423,22 @@
         submitBtn.textContent = 'Cannot submit — no credits';
       }
     } else if (topType === 'ot_claim') {
+      // OT cutoff removed — agents can submit OT claims for any past or current date.
       const ageDays = Math.floor((new Date(todayISO()) - new Date(date)) / 86400000);
       banner.classList.add('show');
       if (ageDays < 0) {
         banner.classList.add('warn');
         banner.innerHTML = `<strong>⚠ Future date.</strong> Pick a date you actually worked.`;
         submitBtn.disabled = true;
-      } else if (ageDays > OT_CUTOFF_DAYS) {
-        banner.classList.add('danger');
-        banner.innerHTML = `<strong>⚠ Past cutoff.</strong> This is ${ageDays} days after the date worked. The cutoff is ${OT_CUTOFF_DAYS} days. Your supervisor may auto-deny.`;
-        submitBtn.classList.add('warning');
-        submitBtn.textContent = 'Submit anyway';
       } else {
         banner.classList.add('ok');
-        banner.innerHTML = `<strong>✓ Within the ${OT_CUTOFF_DAYS}-day cutoff.</strong> ${ageDays === 0 ? 'Submitted same-day.' : ageDays + ' day' + (ageDays===1?'':'s') + ' after the date worked.'}`;
+        banner.innerHTML = `<strong>✓ OT claim.</strong> ${ageDays === 0 ? 'Submitted same-day.' : ageDays + ' day' + (ageDays===1?'':'s') + ' after the date worked.'} No submission deadline.`;
       }
     } else if (topType === 'accom') {
       banner.classList.add('show', 'ok');
       banner.innerHTML = `<strong>${TYPE_LABEL[accomSubType] || 'Accommodation'}</strong> — your supervisor will review.`;
     }
   }
-
   // ---- Submit (opens confirmation modal) ----
   let pendingPayload = null;
   document.getElementById('reqForm').addEventListener('submit', e => {
@@ -489,7 +449,6 @@
     if (!topType) { showToast('Pick a request type.', 'err'); return; }
     const date = document.getElementById('date').value;
     if (!date) { showToast('Pick a date.', 'err'); return; }
-
     let row = {
       agent_name: agent.name,
       agent_supervisor: agent.supervisor,
@@ -499,7 +458,6 @@
       coverage: document.getElementById('coverage').value.trim() || null,
     };
     let isException = false;
-
     if (topType === 'accom') {
       if (!accomSubType) { showToast('Pick an accommodation type.', 'err'); return; }
       row.request_type = accomSubType;
@@ -521,11 +479,9 @@
       row.ot_pre_authorizer = document.getElementById('otAuth').value.trim() || null;
       row.reason = null; row.coverage = null;
     }
-
     pendingPayload = { row, isException, agent };
     showConfirmation();
   });
-
   function showConfirmation() {
     const { row, isException, agent } = pendingPayload;
     const dateLabel = new Date(row.request_date + 'T00:00:00').toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
@@ -552,7 +508,6 @@
     btn.textContent = isException ? 'Send exception request' : 'Confirm & send';
     document.getElementById('confirmModal').classList.add('show');
   }
-
   document.getElementById('confirmSendBtn').addEventListener('click', async () => {
     if (!pendingPayload) return;
     const btn = document.getElementById('confirmSendBtn');
@@ -582,28 +537,24 @@
     refreshContext(agent.name);
     loadHistory(agent.name);
   });
-
   document.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', () => {
     document.getElementById('confirmModal').classList.remove('show');
   }));
   document.getElementById('confirmModal').addEventListener('click', e => {
     if (e.target.id === 'confirmModal') document.getElementById('confirmModal').classList.remove('show');
   });
-
   function showToast(msg, kind='ok') {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = `toast show ${kind}`;
     setTimeout(() => t.classList.remove('show'), 5000);
   }
-
   // ---- History ----
   let historyFilter = 'all';
   document.getElementById('historyFilter').addEventListener('change', e => {
     historyFilter = e.target.value;
     if (agentSel.value) loadHistory(agentSel.value);
   });
-
   async function loadHistory(name) {
     const list = document.getElementById('historyList');
     if (!name) { list.innerHTML = '<div class="empty">Pick your name above.</div>'; return; }
@@ -616,7 +567,6 @@
     if (historyFilter === 'pending') items = items.filter(r => r.status === 'pending');
     if (historyFilter === 'decided') items = items.filter(r => r.status === 'approved' || r.status === 'denied' || r.status === 'cancelled');
     if (!items.length) { list.innerHTML = `<div class="empty">No ${historyFilter==='all'?'':historyFilter+' '}requests.</div>`; return; }
-
     list.innerHTML = items.map(r => `
       <div class="item">
         <div class="row1">
@@ -631,7 +581,6 @@
         ${r.status === 'pending' ? `<button class="item-cancel" data-cancel="${r.id}">Cancel this request</button>` : ''}
       </div>
     `).join('');
-
     list.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', () => cancelRequest(b.dataset.cancel)));
   }
   async function cancelRequest(id) {
@@ -641,7 +590,6 @@
     showToast('Request cancelled.', 'ok');
     loadHistory(agentSel.value);
   }
-
   function labelStatus(s) {
     if (s === 'awaiting_partner') return 'Awaiting partner';
     if (s === 'cancelled') return 'Cancelled';
