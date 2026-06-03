@@ -133,6 +133,7 @@
   .status-btn:disabled { opacity:0.4; cursor:not-allowed; }
   .status-btn.lastmin-btn { background:#fff7ed; color:#9a3412; border-color:#fdba74; font-weight:700; }
   .status-btn.lastmin-btn:hover { background:#fed7aa; color:#7c2d12; border-color:#f97316; }
+  .status-btn.lastmin-btn.active { background:#f97316; color:white; border-color:#ea580c; }
   .reset-btn { padding:5px 8px; font-size:11px; background:transparent; color:var(--subtle);
     border:1px dashed var(--border); border-radius:5px; cursor:pointer; }
   .reset-btn:hover { color:var(--text); border-color:var(--muted); }
@@ -818,6 +819,65 @@
   }
 
   function loadState() {
+    // Migrate from older storage keys — preserve overrides, submissions, manualLeaves
+    const OLD_KEYS = ['agentTracker.v4', 'agentTracker.v3', 'agentTracker.v2', 'agentTracker.v1'];
+    let migrated = null;
+    for (const oldKey of OLD_KEYS) {
+      const oldRaw = localStorage.getItem(oldKey);
+      if (oldRaw) {
+        try {
+          const oldData = JSON.parse(oldRaw);
+          if (oldData && oldData.overrides) {
+            migrated = oldData;
+            console.log('Migrating data from', oldKey);
+            break;
+          }
+        } catch(e) {}
+      }
+    }
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      // If v5 already has data, use it (but merge in migrated overrides/submissions if v5 is fresh)
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.agents) && data.agents.length) {
+          // If we have migrated data and v5 overrides are empty, restore them
+          if (migrated && migrated.overrides && Object.keys(data.overrides||{}).length === 0) {
+            data.overrides = migrated.overrides;
+            data.submissions = migrated.submissions || data.submissions || [];
+            if (!Array.isArray(data.manualLeaves) || data.manualLeaves.length === 0) {
+              data.manualLeaves = migrated.manualLeaves || [];
+            }
+            console.log('Restored overrides from previous version');
+          }
+          if (!data.settings) data.settings = defaultSettings();
+          Object.assign(data.settings, { ...defaultSettings(), ...data.settings });
+          if (!data.overrides) data.overrides = {};
+          if (!Array.isArray(data.submissions)) data.submissions = [];
+          if (!Array.isArray(data.manualLeaves)) data.manualLeaves = [];
+          data.agents.forEach(a => {
+            if (a.name === 'Michael Scott Chavez')
+              a.schedule = {1:'office',2:'office',3:'office',4:'off',5:'wfh',6:'wfh',0:'off'};
+            if (a.name === 'Brianna Miller')
+              a.schedule = {1:'wfh',2:'off',3:'wfh',4:'wfh',5:'wfh',6:'wfh',0:'off'};
+          });
+          return data;
+        }
+      }
+    } catch(e) {}
+
+    // No v5 data — build from migrated old data if available
+    if (migrated) {
+      const fresh = defaultState();
+      fresh.overrides = migrated.overrides || {};
+      fresh.submissions = migrated.submissions || [];
+      fresh.manualLeaves = migrated.manualLeaves || [];
+      if (migrated.settings) Object.assign(fresh.settings, migrated.settings);
+      console.log('Initialized v5 from migrated data');
+      return fresh;
+    }
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -949,6 +1009,10 @@
     const created = new Date(r.created_at);
     const requested = new Date(r.request_date + 'T23:59:59');
     return (requested - created) <= 24 * 3600 * 1000;
+  }
+
+  function isLateOverride(agentId, dateISO) {
+    return !!(state.overrides[dateISO]?.[agentId]?.lateRequest);
   }
 
   // ---- Filtered agents ----
@@ -1174,12 +1238,14 @@
     const accomInfo = accom ? (STATUSES[accom] || null) : null;
 
     // Build status pills HTML (no nested template literals)
+    const isLate = !!(override?.lateRequest);
+    const lateBadge = isLate ? ' <span style="background:#f97316;color:white;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700;">⚡ Late</span>' : '';
     let statusPillsHtml;
     if (hasCombo && leaveInfo && accomInfo) {
       statusPillsHtml = '<span class="status-pill ' + leaveInfo.class + '" style="font-size:10px">' + leaveInfo.label + '</span>'
-        + '<span class="status-pill ' + accomInfo.class + '" style="font-size:10px">+' + accomInfo.short + '</span>';
+        + '<span class="status-pill ' + accomInfo.class + '" style="font-size:10px">+' + accomInfo.short + '</span>' + lateBadge;
     } else {
-      statusPillsHtml = '<span class="status-pill ' + info.class + '">' + info.label + '</span>';
+      statusPillsHtml = '<span class="status-pill ' + info.class + '">' + info.label + '</span>' + lateBadge;
     }
 
     const hasOverride = override && Object.keys(override).some(k => k !== 'ts' && override[k]);
@@ -1214,7 +1280,7 @@
       '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">' + statusPillsHtml + '</div>' +
       '<div>' + overrideTagHtml + '</div>' +
       '<div class="status-buttons">' +
-        '<button class="status-btn lastmin-btn" data-lastmin="' + agent.id + '" title="Log a last-minute accommodation">&#x26A1; Last-Min</button>' +
+        '<button class="status-btn lastmin-btn ' + (override?.lateRequest ? 'active' : '') + '" data-lastmin="' + agent.id + '" title="Toggle: mark this accommodation as a late/last-minute request">&#x26A1; Late</button>' +
         '<button class="status-btn accom_wfh ' + (curAccomType === 'accom_wfh' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_wfh">WFH</button>' +
         '<button class="status-btn accom_early ' + (curAccomType === 'accom_early' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_early">Early</button>' +
         '<button class="status-btn accom_late ' + (curAccomType === 'accom_late' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_late">Late</button>' +
@@ -1261,7 +1327,8 @@
             state.submissions.push({
               id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
               request_type: newAccom, request_date: selectedDate,
-              created_at: new Date().toISOString(), status: 'approved', submitted_by: 'supervisor'
+              created_at: new Date().toISOString(), status: 'approved', submitted_by: 'supervisor',
+              manualLastMinute: !!(state.overrides[selectedDate][agent.id]?.lateRequest)
             });
           }
           saveState(); render();
@@ -1319,25 +1386,22 @@
   });
 
   function markLastMinute(agentId) {
-    const agent = state.agents.find(a => a.id === agentId);
-    if (!agent) return;
-    const choice = prompt(
-      `Last-minute accommodation for ${agent.name} on ${selectedDate}.\n\n` +
-      `Pick a type:\n  W = Accom WFH\n  E = Came in early\n  L = Stayed late\n  O = Office day swap\n  G = General (doctor appt, makeup time, etc.)\n\nEnter W, E, L, O, or G:`, 'W'
-    );
-    if (!choice) return;
-    const typeMap = { W:'accom_wfh', E:'accom_early', L:'accom_late', O:'accom_office_change', G:'accom_general' };
-    const status = typeMap[choice.trim().toUpperCase()];
-    if (!status) { alert('Invalid type.'); return; }
-    const reason = prompt('Optional note (visible in audit trail):', '') || '';
+    // Toggles the "late request" flag on whatever accommodation is already set.
+    // Select the accommodation type first, then click ⚡ Late to flag it.
     if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-    state.overrides[selectedDate][agentId] = { type: status, source: 'manual', note: reason, ts: new Date().toISOString() };
-    state.submissions.push({
-      id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
-      request_type: status, request_date: selectedDate,
-      created_at: new Date().toISOString(), status: 'approved',
-      submitted_by: 'supervisor', reason, manualLastMinute: true
-    });
+    const o = state.overrides[selectedDate][agentId] || {};
+    const wasLate = !!o.lateRequest;
+    if (!wasLate && !o.accomType && !o.type) {
+      alert('Set an accommodation first (WFH, Early, Late, General, or Extra), then click ⚡ Late to flag it as a late request.');
+      return;
+    }
+    state.overrides[selectedDate][agentId] = { ...o, lateRequest: !wasLate, ts: new Date().toISOString() };
+    // Update the matching submission record's lateRequest flag if it exists
+    const sub = state.submissions.slice().reverse().find(s =>
+      s.agent_name === state.agents.find(a => a.id === agentId)?.name &&
+      s.request_date === selectedDate
+    );
+    if (sub) sub.manualLastMinute = !wasLate;
     saveState(); render();
   }
 
@@ -1925,7 +1989,7 @@
       Object.keys(state.overrides).forEach(date => {
         if (date<trendFrom||date>trendTo) return;
         const o = state.overrides[date][a.id];
-        if (o && ACCOM_TYPES.includes(o.type)) total++;
+        const _t = o.accomType || o.type; if (o && ACCOM_TYPES.includes(_t)) total++;
       });
       return { agent:a, total };
     }).filter(r=>r.total>0).sort((a,b)=>b.total-a.total);
@@ -1937,7 +2001,7 @@
       label: r.agent.name,
       data: days.map(date => {
         const o = state.overrides[date]?.[r.agent.id];
-        return o && ACCOM_TYPES.includes(o.type) ? 1 : 0;
+        const _t2 = o && (o.accomType || o.type); return _t2 && ACCOM_TYPES.includes(_t2) ? 1 : 0;
       }).reduce((acc,val,idx) => {
         if (idx%7===0) acc.push(0);
         acc[acc.length-1]+=val; return acc;
@@ -1999,7 +2063,7 @@
       Object.keys(state.overrides).forEach(date => {
         if(date<trendFrom||date>trendTo) return;
         const o=state.overrides[date][a.id];
-        if(o && counts[o.type]!==undefined) counts[o.type]++;
+        const _tt = o && (o.accomType || o.type); if(o && _tt && counts[_tt]!==undefined) counts[_tt]++;
       });
       const total=counts.accom_wfh+counts.accom_early+counts.accom_late+counts.accom_office_change+counts.accom_general;
       return { name:a.name, supervisor:a.supervisor||'', team:a.team||'', ...counts, total };
@@ -2024,7 +2088,7 @@
       Object.keys(state.overrides).forEach(date => {
         if(date<trendFrom||date>trendTo) return;
         const o=state.overrides[date][a.id];
-        if(o && ACCOM_TYPES.includes(o.type)) { supervisorMap[sup][o.type]++; supervisorMap[sup].total++; }
+        const _st = o && (o.accomType || o.type); if(o && ACCOM_TYPES.includes(_st)) { supervisorMap[sup][_st]++; supervisorMap[sup].total++; }
       });
     });
     const supRows = Object.entries(supervisorMap).map(([name,c]) => ({
@@ -2111,9 +2175,11 @@
         </div>
         <div class="agent-names">${items.map(({a,s})=>{
           const note=state.overrides[date]?.[a.id]?.accomNote||state.overrides[date]?.[a.id]?.note;
+          const late=state.overrides[date]?.[a.id]?.lateRequest;
           const tag=(s==='accom_wfh'||s==='accom_early'||s==='accom_late'||s==='accom_general')?
             ` <span class="tag">${escapeHtml(note||STATUSES[s].short.replace('Accom ',''))}</span>`:'';
-          return `<div class="agent-name-row" data-date="${date}">${escapeHtml(a.name)}${tag}</div>`;
+          const lateTag=late?` <span class="tag" style="background:#f97316;color:white;border-radius:3px;padding:1px 4px;font-size:9px">⚡</span>`:'';
+          return `<div class="agent-name-row" data-date="${date}">${escapeHtml(a.name)}${tag}${lateTag}</div>`;
         }).join('')}</div></div>`;
     };
     const total=Object.values(buckets).reduce((s,b)=>s+b.length,0);
