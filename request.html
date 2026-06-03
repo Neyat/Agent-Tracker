@@ -3,2451 +3,593 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agent Status Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<title>Submit Request</title>
 <style>
   :root {
-    --bg:#f4f6fa; --card:#fff; --text:#1a2332; --muted:#6b7280; --subtle:#9ca3af;
-    --border:#e5e7eb; --primary:#2563eb; --primary-dark:#1d4ed8;
-    --office:#10b981; --wfh:#3b82f6;
-    --accom:#f59e0b; --accom-early:#8b5cf6; --accom-late:#ec4899; --accom-office:#06b6d4; --accom-general:#84cc16;
-    --extra:#14b8a6; --pto:#ef4444; --jiffy:#f97316; --halfjiffy:#fb923c; --unpaid:#a855f7; --off:#9ca3af;
-    --warn:#b45309; --danger:#991b1b;
-    --good:#16a34a; --ok:#ca8a04; --bad:#dc2626;
-    --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+    --bg:#f4f6fa; --card:#fff; --text:#1a2332; --muted:#6b7280; --border:#e5e7eb;
+    --primary:#2563eb; --primary-dark:#1d4ed8;
+    --accom:#f59e0b; --accom-early:#8b5cf6; --accom-late:#ec4899; --accom-office:#06b6d4;
+    --accom-general:#84cc16; --extra:#14b8a6; --pto:#ef4444;
+    --warn:#b45309; --danger:#991b1b; --good:#16a34a;
   }
   * { box-sizing: border-box; }
   body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background:var(--bg); color:var(--text); line-height:1.5; }
-  header { background:white; border-bottom:1px solid var(--border); padding:14px 24px;
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-    position:sticky; top:0; z-index:10; }
-  header h1 { margin:0; font-size:20px; font-weight:600; }
-  .container { max-width:1500px; margin:0 auto; padding:18px 24px; }
-  .tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:18px; overflow-x:auto; }
-  .tab { padding:10px 14px; cursor:pointer; font-size:14px; font-weight:500;
-    color:var(--muted); border-bottom:2px solid transparent; user-select:none; white-space:nowrap; }
-  .tab:hover { color:var(--text); }
-  .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
-  .tab-badge { background:var(--pto); color:white; padding:1px 7px; border-radius:10px;
-    font-size:11px; font-weight:700; margin-left:4px; }
-  .tab-panel { display:none; }
-  .tab-panel.active { display:block; }
-  .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;
-    background:white; padding:12px 16px; border-radius:10px; box-shadow:var(--shadow); }
-  .controls label { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); font-weight:500; }
-  input, select, textarea { padding:7px 10px; border:1px solid var(--border); border-radius:6px;
-    font-size:14px; font-family:inherit; background:white; }
-  textarea { resize:vertical; min-height:60px; width:100%; }
-  button { padding:7px 14px; border:none; border-radius:6px; font-size:13px; font-weight:500;
-    cursor:pointer; font-family:inherit; transition:background .15s; }
-  .btn-primary { background:var(--primary); color:white; }
-  .btn-primary:hover { background:var(--primary-dark); }
-  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
-  .btn-ghost:hover { background:#f9fafb; color:var(--text); }
-  .btn-danger { background:#fef2f2; color:var(--pto); border:1px solid #fecaca; }
-  .btn-approve { padding:7px 14px; background:#dcfce7; color:#166534;
-    border:1px solid #86efac; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
-  .btn-approve:hover { background:#bbf7d0; }
-  .toggle-group { display:inline-flex; gap:0; background:#f3f4f6; border-radius:6px; padding:2px; }
-  .toggle-group button { padding:5px 12px; font-size:12px; background:transparent;
-    color:var(--muted); border:none; border-radius:4px; }
-  .toggle-group button.active { background:white; color:var(--text); box-shadow:var(--shadow); font-weight:600; }
-  .summary { display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:8px; margin-bottom:14px; }
-  .stat { background:var(--card); padding:11px 14px; border-radius:8px; box-shadow:var(--shadow); border-left:3px solid; }
-  .stat .label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600; }
-  .stat .value { font-size:22px; font-weight:600; margin-top:1px; line-height:1.1; }
-  .stat .breakdown { margin-top:4px; font-size:10px; color:var(--muted); line-height:1.3; }
-  .stat .breakdown b { color:var(--text); font-weight:600; }
-  .stat.office { border-color:var(--office); }
-  .stat.wfh { border-color:var(--wfh); }
-  .stat.accom { border-color:var(--accom); }
-  .stat.extra { border-color:var(--extra); }
-  .stat.pto { border-color:var(--pto); }
-  .stat.jiffy { border-color:var(--jiffy); }
-  .stat.halfjiffy { border-color:var(--halfjiffy); }
-  .stat.unpaid { border-color:var(--unpaid); }
-  .stat.off { border-color:var(--off); }
-  .stat.coverage { border-color:var(--good); }
-  .stat.coverage.amber { border-color:var(--ok); }
-  .stat.coverage.red { border-color:var(--bad); }
-  .heatmap-card { background:white; border-radius:10px; box-shadow:var(--shadow); padding:14px 18px; margin-bottom:14px; }
-  .heatmap-card h3 { margin:0 0 10px; font-size:14px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
-  .heatmap-grid { display:grid; grid-template-columns:repeat(15, 1fr); gap:3px; font-size:11px; }
-  .heatmap-cell { padding:8px 2px; text-align:center; border-radius:4px; cursor:default; }
-  .hm-good { background:#dcfce7; color:#166534; }
-  .hm-ok { background:#fef3c7; color:#92400e; }
-  .hm-bad { background:#fee2e2; color:#991b1b; }
-  .hm-empty { background:#f3f4f6; color:var(--muted); }
-  .hm-label { font-size:10px; color:var(--muted); padding:4px 0; }
-  .group-section { background:var(--card); border-radius:10px; box-shadow:var(--shadow); margin-bottom:12px; overflow:hidden; }
-  .group-header { padding:11px 16px; background:#f9fafb; border-bottom:1px solid var(--border);
-    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
-  .group-header h3 { margin:0; font-size:14px; font-weight:600; }
-  .group-meta { font-size:11px; color:var(--muted); }
-  .group-counts { display:flex; gap:6px; flex-wrap:wrap; font-size:11px; }
-  .count-chip { padding:2px 8px; border-radius:12px; font-weight:600; background:#f3f4f6; color:var(--muted); }
-  .agent-row { display:grid; grid-template-columns:minmax(200px, 1.2fr) 150px 80px 1fr;
-    align-items:center; gap:10px; padding:9px 16px; border-bottom:1px solid #f3f4f6; }
-  .agent-row:last-child { border-bottom:none; }
-  .agent-row:hover { background:#fafbfc; }
-  .agent-row.is-leave { background:#fef2f2; }
-  .agent-row.is-accom { background:#fffbeb; }
-  .agent-row.is-extra { background:#f0fdfa; }
-  .agent-row.is-off { opacity:0.55; }
-  .agent-info .name { font-weight:600; font-size:14px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
-  .agent-info .sub { font-size:11px; color:var(--muted); margin-top:1px; }
-  .counter-chip { font-size:10px; padding:1px 6px; border-radius:10px; background:#f3f4f6; color:var(--muted); font-weight:600; }
-  .counter-chip.warn { background:#fef3c7; color:var(--warn); }
-  .counter-chip.bank { background:#ccfbf1; color:#0f766e; }
-  .status-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
-    border-radius:999px; font-size:11px; font-weight:600; color:white; white-space:nowrap; width:fit-content; }
-  .status-pill.office { background:var(--office); }
-  .status-pill.wfh { background:var(--wfh); }
-  .status-pill.accom_wfh { background:var(--accom); }
-  .status-pill.accom_early { background:var(--accom-early); }
-  .status-pill.accom_late { background:var(--accom-late); }
-  .status-pill.accom_office_change { background:var(--accom-office); }
-  .status-pill.accom_general { background:var(--accom-general); color:#1a2332; }
-  .status-pill.extra_hours_wfh { background:var(--extra); }
-  .status-pill.pto { background:var(--pto); }
-  .status-pill.jiffy_day { background:var(--jiffy); }
-  .status-pill.half_jiffy { background:var(--halfjiffy); }
-  .status-pill.unpaid { background:var(--unpaid); }
-  .status-pill.off { background:var(--off); }
-  .override-tag { font-size:10px; font-weight:700; text-transform:uppercase;
-    padding:2px 6px; border-radius:4px; background:#f3f4f6; color:var(--muted); }
-  .status-buttons { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
-  .status-btn { padding:5px 9px; font-size:11px; font-weight:600; border:1px solid var(--border);
-    background:white; color:var(--muted); border-radius:5px; cursor:pointer; }
-  .status-btn:hover { background:#f3f4f6; }
-  .status-btn.active.accom_wfh { background:var(--accom); color:white; border-color:var(--accom); }
-  .status-btn.active.accom_early { background:var(--accom-early); color:white; border-color:var(--accom-early); }
-  .status-btn.active.accom_late { background:var(--accom-late); color:white; border-color:var(--accom-late); }
-  .status-btn.active.accom_general { background:var(--accom-general); color:#1a2332; border-color:var(--accom-general); }
-  .status-btn.active.extra_hours_wfh { background:var(--extra); color:white; border-color:var(--extra); }
-  .status-btn.active.pto { background:var(--pto); color:white; border-color:var(--pto); }
-  .status-btn.active.jiffy_day { background:var(--jiffy); color:white; border-color:var(--jiffy); }
-  .status-btn.active.half_jiffy { background:var(--halfjiffy); color:white; border-color:var(--halfjiffy); }
-  .status-btn.active.unpaid { background:var(--unpaid); color:white; border-color:var(--unpaid); }
-  .status-btn:disabled { opacity:0.4; cursor:not-allowed; }
-  .status-btn.lastmin-btn { background:#fff7ed; color:#9a3412; border-color:#fdba74; font-weight:700; }
-  .status-btn.lastmin-btn:hover { background:#fed7aa; color:#7c2d12; border-color:#f97316; }
-  .reset-btn { padding:5px 8px; font-size:11px; background:transparent; color:var(--subtle);
-    border:1px dashed var(--border); border-radius:5px; cursor:pointer; }
-  .reset-btn:hover { color:var(--text); border-color:var(--muted); }
-  .leave-dropdown-wrap { gap:3px; }
-  .leave-select:focus { outline:2px solid var(--primary); }
-  /* Request cards */
-  .request-card { background:white; border:1px solid var(--border); border-radius:10px;
-    padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); }
-  .request-card.type-ot_claim { border-left:4px solid var(--extra); }
-  .request-card.type-extra_hours_wfh { border-left:4px solid var(--extra); }
-  .request-card.type-accom_wfh,
-  .request-card.type-accom_early,
-  .request-card.type-accom_late,
-  .request-card.type-accom_office_change,
-  .request-card.type-accom_general { border-left:4px solid var(--accom); }
-  .req-row { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
-  .req-info { flex:1; min-width:0; }
-  .req-name { font-weight:600; font-size:15px; }
-  .req-meta { font-size:12px; color:var(--muted); }
-  .req-type-row { display:flex; align-items:center; gap:8px; margin:6px 0 8px; flex-wrap:wrap; }
-  .req-pill { padding:3px 9px; border-radius:4px; font-size:11px; font-weight:600; color:white; }
-  .req-pill.accom_wfh, .req-pill.accom_early, .req-pill.accom_late,
-  .req-pill.accom_office_change, .req-pill.accom_general { background:var(--accom); color:#1a2332; }
-  .req-pill.ot_claim, .req-pill.extra_hours_wfh { background:var(--extra); }
-  .req-warn { padding:8px 11px; background:#fef3c7; border:1px solid #fde68a;
-    border-radius:6px; font-size:12px; color:var(--warn); margin-bottom:8px; }
-  .req-warn.danger { background:#fee2e2; border-color:#fecaca; color:var(--danger); }
-  .req-warn.ok { background:#ccfbf1; border-color:#5eead4; color:#0f766e; }
-  .req-actions { display:flex; flex-direction:column; gap:6px; min-width:100px; }
-  .req-history { margin-top:24px; }
-  .req-history h3 { font-size:13px; color:var(--muted); text-transform:uppercase;
-    letter-spacing:0.5px; font-weight:600; margin:0 0 10px; }
-  .last-minute-flag { display:inline-block; background:#fee2e2; color:var(--danger);
-    border-radius:4px; padding:1px 6px; font-size:10px; font-weight:700;
-    text-transform:uppercase; letter-spacing:0.04em; margin-left:6px; }
-  /* Tables */
-  .report-card { background:white; border-radius:10px; box-shadow:var(--shadow); padding:16px 18px; margin-bottom:12px; }
-  .report-card h2 { margin:0 0 12px; font-size:15px; font-weight:600; }
-  table.report { width:100%; border-collapse:collapse; font-size:13px; }
-  table.report th, table.report td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; }
-  table.report th { background:#f9fafb; font-weight:600; font-size:11px;
-    color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; }
-  td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .pill { display:inline-block; padding:2px 7px; border-radius:999px; font-size:11px; font-weight:600; }
-  .pill.warn { background:#fef3c7; color:var(--warn); }
-  .pill.danger { background:#fee2e2; color:var(--pto); }
-  .pill.ok { background:#dcfce7; color:#166534; }
-  .pill.bank { background:#ccfbf1; color:#0f766e; }
-  /* Charts */
-  .chart-container { position:relative; height:300px; margin-top:8px; }
-  .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  @media (max-width:900px) { .chart-row { grid-template-columns:1fr; } }
+    background:var(--bg); color:var(--text); line-height:1.5; padding:20px 12px; }
+  .wrap { max-width:560px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:var(--muted); font-size:14px; margin:0 0 18px; }
+  .card { background:var(--card); border-radius:12px; border:1px solid var(--border);
+    padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+  .field { margin-bottom:14px; }
+  label.fl { display:block; font-size:13px; color:var(--muted); margin-bottom:5px; font-weight:500; }
+  input, select, textarea { width:100%; padding:10px 12px; border:1px solid var(--border);
+    border-radius:8px; font-size:14px; font-family:inherit; background:white; }
+  textarea { resize:vertical; min-height:60px; }
+  .pills { display:flex; flex-wrap:wrap; gap:6px; }
+  .pill { padding:8px 13px; border-radius:8px; font-size:13px; cursor:pointer; user-select:none;
+    background:#f3f4f6; color:var(--muted); border:1px solid var(--border); }
+  .pill:hover { background:#e5e7eb; }
+  .pill.active { color:white; font-weight:600; border-color:transparent; }
+  .pill.active.accom { background:var(--accom); color:#1a2332; }
+  .pill.active.ot_claim { background:var(--extra); }
+  .pill.active.extra_hours_wfh { background:var(--extra); }
+  .sub-pills { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);
+    display:flex; flex-wrap:wrap; gap:6px; }
+  .sub-pill { padding:6px 11px; border-radius:8px; font-size:12px; cursor:pointer;
+    background:#f3f4f6; color:var(--muted); border:1px solid var(--border); }
+  .sub-pill.active.accom_wfh { background:var(--accom); color:#1a2332; border-color:var(--accom); }
+  .sub-pill.active.accom_early { background:var(--accom-early); color:white; border-color:var(--accom-early); }
+  .sub-pill.active.accom_late { background:var(--accom-late); color:white; border-color:var(--accom-late); }
+  .sub-pill.active.accom_office_change { background:var(--accom-office); color:white; border-color:var(--accom-office); }
+  .sub-pill.active.accom_general { background:var(--accom-general); color:#1a2332; border-color:var(--accom-general); }
+  button.submit { width:100%; padding:12px 16px; background:var(--primary); color:white;
+    border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-top:6px; }
+  button.submit:hover { background:var(--primary-dark); }
+  button.submit:disabled { opacity:0.5; cursor:not-allowed; }
+  button.submit.warning { background:var(--warn); }
+  .toast { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none; }
+  .toast.show { display:block; }
+  .toast.ok { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+  .toast.err { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+  .rule-banner { padding:10px 12px; border-radius:8px; font-size:13px; margin-bottom:12px;
+    display:none; line-height:1.45; }
+  .rule-banner.show { display:block; }
+  .rule-banner.ok { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+  .rule-banner.warn { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  .rule-banner.danger { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+  .rule-banner.bank { background:#ccfbf1; color:#0f766e; border:1px solid #5eead4; }
+  .rule-banner strong { font-weight:700; }
+  .row-2 { display:flex; gap:10px; }
+  .row-2 > * { flex:1; min-width:0; }
+  .history { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+  .h-title { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;
+    font-weight:600; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+  .h-title select { width:auto; padding:4px 8px; font-size:12px; border-radius:6px; }
+  .item { padding:10px 12px; background:#f9fafb; border-radius:8px; font-size:13px; margin-bottom:6px; }
+  .item .row1 { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .item .row1 .left { font-weight:500; }
+  .item-meta { font-size:11px; color:var(--muted); margin-top:3px; }
+  .item .denial { margin-top:6px; padding:6px 9px; background:#fee2e2; color:#991b1b;
+    border-radius:6px; font-size:12px; }
+  .item-cancel { margin-top:6px; padding:4px 9px; font-size:11px; background:transparent;
+    color:var(--muted); border:1px solid var(--border); border-radius:5px; cursor:pointer; }
+  .item-cancel:hover { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+  .status { padding:3px 10px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .status.approved { background:#dcfce7; color:#166534; }
+  .status.pending { background:#fef3c7; color:#92400e; }
+  .status.denied { background:#fee2e2; color:#991b1b; }
+  .status.cancelled { background:#f3f4f6; color:#6b7280; }
+  .empty { color:var(--muted); font-size:13px; padding:12px; text-align:center; }
+  .config-warn { background:#fef3c7; border:1px solid #fde68a; color:#92400e;
+    padding:12px; border-radius:8px; margin-bottom:14px; font-size:13px; }
+  .type-detail { display:none; padding:10px; background:#f9fafb; border-radius:8px;
+    border:1px dashed var(--border); margin-top:10px; }
+  .type-detail.show { display:block; }
+  .type-detail h4 { margin:0 0 8px; font-size:13px; color:var(--muted); }
+  .type-help { font-size:12px; color:var(--muted); margin-top:6px; }
+  .general-tip { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;
+    padding:8px 11px; border-radius:6px; font-size:12px; margin-top:8px; }
   /* Modal */
-  .modal-backdrop { position:fixed; inset:0; background:rgba(15, 23, 42, 0.5);
+  .modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,0.6);
     display:none; align-items:center; justify-content:center; z-index:100; padding:16px; }
   .modal-backdrop.show { display:flex; }
-  .modal { background:white; border-radius:12px; max-width:700px; width:100%;
+  .modal { background:white; border-radius:12px; max-width:480px; width:100%;
     max-height:90vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
-  .modal-head { padding:14px 22px; border-bottom:1px solid var(--border);
-    display:flex; justify-content:space-between; align-items:center;
-    position:sticky; top:0; background:white; z-index:1; }
-  .modal-head h2 { margin:0; font-size:16px; }
+  .modal-head { padding:16px 22px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center; }
+  .modal-head h2 { margin:0; font-size:17px; }
   .modal-body { padding:18px 22px; }
+  .modal-footer { padding:14px 22px; border-top:1px solid var(--border);
+    display:flex; gap:10px; justify-content:flex-end; }
   .modal-close { background:transparent; border:none; cursor:pointer;
     font-size:24px; color:var(--muted); line-height:1; padding:0 6px; }
-  .form-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
-  .form-row > * { flex:1; min-width:140px; }
-  .form-label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; font-weight:500; }
-  .schedule-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .schedule-table th, .schedule-table td { padding:8px 6px; border-bottom:1px solid var(--border); text-align:center; }
-  .schedule-table th { background:#f9fafb; font-weight:600; font-size:11px;
-    color:var(--muted); text-transform:uppercase; }
-  .schedule-table td.name { text-align:left; padding-left:12px; }
-  .day-cell { cursor:pointer; user-select:none; border-radius:4px; padding:6px 8px;
-    font-size:11px; font-weight:600; display:inline-block; min-width:56px; }
-  .day-cell.office { background:#ecfdf5; color:#065f46; }
-  .day-cell.wfh { background:#eff6ff; color:#1e40af; }
-  .day-cell.off { background:#f3f4f6; color:var(--off); }
-  .empty { text-align:center; padding:32px 16px; color:var(--muted); font-size:13px; }
-  /* Schedule view */
-  .sched-wrap { background:transparent; padding:0; overflow-x:auto; }
-  .staff-heatmap-wrap { background:white; border-radius:10px; box-shadow:var(--shadow); padding:18px 20px; }
-  .staff-heatmap-title { font-size:14px; font-weight:600; margin-bottom:14px;
-    color:var(--text); display:flex; align-items:center; gap:8px; }
-  .staff-heatmap-title .legend { margin-left:auto; display:flex; align-items:center; gap:6px;
-    font-size:11px; color:var(--muted); font-weight:400; }
-  .staff-heatmap-title .legend .scale { display:inline-flex; height:12px; border-radius:3px; overflow:hidden; }
-  .staff-heatmap-title .legend .scale span { width:18px; height:12px; }
-  .staff-heatmap-overflow { overflow-x:auto; }
-  .staff-heatmap { border-collapse:collapse; font-size:13px; min-width:100%; }
-  .staff-heatmap th { padding:10px 8px; background:#f9fafb; font-weight:600; border-bottom:1px solid var(--border); }
-  .staff-heatmap th.time-col { text-align:left; padding-left:14px; color:var(--muted);
-    text-transform:uppercase; font-size:11px; letter-spacing:0.4px; min-width:90px; }
-  .staff-heatmap th.day-col { text-align:center; color:var(--text); font-size:13px;
-    font-weight:600; min-width:74px; }
-  .staff-heatmap th.day-col.today { color:var(--primary); background:#eff6ff; }
-  .staff-heatmap th.day-col .date-sub { display:block; font-size:11px; color:var(--muted); font-weight:400; margin-top:2px; }
-  .staff-heatmap td { padding:8px 6px; text-align:center; border-bottom:1px solid #f3f4f6; }
-  .staff-heatmap td.time-col { font-weight:600; color:var(--muted); text-align:left;
-    padding-left:14px; font-variant-numeric:tabular-nums; background:white;
-    position:sticky; left:0; border-right:1px solid var(--border); white-space:nowrap; z-index:1; }
-  .staff-heatmap td.staff-cell { font-weight:700; cursor:pointer; transition:transform .1s; font-variant-numeric:tabular-nums; }
-  .staff-heatmap td.staff-cell:hover { outline:2px solid var(--primary); position:relative; z-index:2; }
-  .staff-heatmap td.staff-cell.empty { color:var(--subtle); cursor:default; background:#fafbfc; }
-  .staff-heatmap tr.boundary td { border-top:2px solid var(--border); }
-  /* Schedule day-cards */
-  .sched-cards { display:flex; gap:12px; padding-bottom:8px; }
-  .sched-cards.period-day .day-card { flex:0 0 100%; max-width:720px; margin:0 auto; }
-  .sched-cards.period-week { flex-wrap:wrap; }
-  .sched-cards.period-week .day-card { flex:1 1 calc((100% - 84px) / 7); min-width:200px; max-width:none; }
-  .sched-cards.period-month .day-card { flex:0 0 220px; }
-  .day-card { background:white; border-radius:10px; box-shadow:var(--shadow); padding:12px 14px; display:flex; flex-direction:column; }
-  .day-card.today { box-shadow:0 0 0 2px var(--primary), var(--shadow); }
-  .day-card.weekend { background:#f9fafb; opacity:0.85; }
-  .day-card-head { display:flex; justify-content:space-between; align-items:center;
-    margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border); gap:6px; }
-  .day-card-date { font-weight:600; font-size:13px; cursor:pointer; }
-  .day-card-cov { font-size:12px; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; }
-  .day-card-cov.cov-good { background:#dcfce7; color:#166534; }
-  .day-card-cov.cov-ok { background:#fef3c7; color:#92400e; }
-  .day-card-cov.cov-bad { background:#fee2e2; color:#991b1b; }
-  .day-card-summary { font-size:11px; color:var(--muted); margin-bottom:8px; padding:6px 8px; background:#f9fafb; border-radius:6px; }
-  .day-card-summary b { color:var(--text); font-weight:600; }
-  .status-section { margin-bottom:6px; }
-  .status-section-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; gap:6px; }
-  .status-section-head .label { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--text); }
-  .status-section-head .swatch { display:inline-block; width:8px; height:8px; border-radius:50%; }
-  .status-section-head .swatch.s-office { background:var(--office); }
-  .status-section-head .swatch.s-wfh { background:var(--wfh); }
-  .status-section-head .swatch.s-accom { background:var(--accom); }
-  .status-section-head .swatch.s-extra { background:var(--extra); }
-  .status-section-head .swatch.s-pto { background:var(--pto); }
-  .status-section-head .swatch.s-jiffy { background:var(--jiffy); }
-  .status-section-head .swatch.s-halfjiffy { background:var(--halfjiffy); }
-  .status-section-head .swatch.s-unpaid { background:var(--unpaid); }
-  .status-section-head .swatch.s-off { background:var(--off); }
-  .status-section-head .count { font-size:11px; font-weight:700; color:var(--muted); }
-  .agent-names { display:flex; flex-direction:column; }
-  .agent-name-row { font-size:12px; padding:2px 6px; cursor:pointer; border-radius:3px; }
-  .agent-name-row:hover { background:#f3f4f6; }
-  .agent-name-row .tag { font-size:10px; color:var(--muted); margin-left:4px; }
-  .day-card-empty { color:var(--muted); font-size:12px; padding:10px; text-align:center; }
-  .timeoff-callout { background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af;
-    padding:9px 14px; border-radius:8px; font-size:13px; margin-bottom:14px;
-    display:flex; align-items:center; gap:10px; }
-  .timeoff-callout a { color:#1e40af; font-weight:600; cursor:pointer; text-decoration:underline; }
-  .config-warn { background:#fef3c7; border:1px solid #fde68a; color:var(--warn);
-    padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13px; }
-  .config-ok { background:#dcfce7; border:1px solid #86efac; color:#166534;
-    padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13px; }
-  details { background:white; border-radius:8px; padding:10px 14px; margin-bottom:8px; box-shadow:var(--shadow); }
-  details summary { cursor:pointer; font-weight:600; font-size:13px; }
-  .leave-list-item { display:flex; justify-content:space-between; align-items:center;
-    padding:9px 12px; background:#f9fafb; border-radius:6px; margin-bottom:6px; font-size:13px; gap:10px; }
-  /* General accommodation note modal */
-  .accom-note-modal { max-width:440px; }
-  @media (max-width: 800px) {
-    .agent-row { grid-template-columns:1fr; gap:6px; padding:11px 14px; }
-    .status-buttons { justify-content:flex-start; }
-  }
+  .review-row { display:flex; padding:7px 0; border-bottom:1px solid #f3f4f6; font-size:14px; }
+  .review-row:last-child { border-bottom:none; }
+  .review-row .label { width:130px; color:var(--muted); font-size:13px; }
+  .review-row .val { flex:1; font-weight:500; }
+  .modal button { padding:10px 18px; border-radius:8px; border:none; font-size:14px;
+    font-weight:600; cursor:pointer; font-family:inherit; }
+  .modal .btn-cancel { background:transparent; color:var(--muted); border:1px solid var(--border); }
+  .modal .btn-cancel:hover { background:#f3f4f6; }
+  .modal .btn-confirm { background:var(--primary); color:white; }
+  .modal .btn-confirm:hover { background:var(--primary-dark); }
+  .modal .btn-confirm.warning { background:var(--warn); }
 </style>
 </head>
 <body>
-<header>
-  <h1>Agent Status Tracker</h1>
-  <div style="display:flex; gap:8px; align-items:center;">
-    <button class="btn-ghost" id="settingsBtn">Settings</button>
-    <button class="btn-ghost" id="editScheduleBtn">Static Schedule</button>
-    <button class="btn-ghost" id="exportBtn">Export</button>
-    <button class="btn-ghost" id="importBtn">Import</button>
-    <input type="file" id="importFile" accept="application/json" style="display:none" />
+<div class="wrap">
+  <h1>Submit a request</h1>
+  <p class="lede">Pick what you need. Your supervisor will be notified and review it.</p>
+  <div id="configWarn" class="config-warn" style="display:none">
+    <strong>Setup required:</strong> Supabase keys haven't been added to this file.
   </div>
-</header>
-<div class="container">
-  <div class="tabs">
-    <div class="tab active" data-tab="daily">Daily Status</div>
-    <div class="tab" data-tab="monthly">Schedule</div>
-    <div class="tab" data-tab="coverage">Coverage Heatmap</div>
-    <div class="tab" data-tab="pending">Pending Requests <span id="pendingBadge" class="tab-badge" style="display:none">0</span></div>
-    <div class="tab" data-tab="leave">Time Off</div>
-    <div class="tab" data-tab="usage">Accommodation Usage</div>
-    <div class="tab" data-tab="bank">Extra Hours Bank</div>
-    <div class="tab" data-tab="trends">Trends</div>
-  </div>
-
-  <!-- ======== DAILY STATUS ======== -->
-  <div class="tab-panel active" id="tab-daily">
-    <div class="controls">
-      <label>Date: <input type="date" id="datePicker" /></label>
-      <button class="btn-ghost" id="todayBtn">Today</button>
-      <span style="font-size:13px; color:var(--muted)" id="dateDisplay"></span>
-      <span style="flex:1"></span>
-      <label>Search: <input type="text" id="searchInput" placeholder="Filter by name…" style="min-width:160px" /></label>
-      <label>Supervisor:
-        <select id="supervisorFilter"><option value="">All</option></select>
-      </label>
-    </div>
-    <div class="controls">
-      <label style="font-weight:600; color:var(--text)">View:</label>
-      <div class="toggle-group" id="viewToggle">
-        <button data-view="all" class="active">All</button>
-        <button data-view="office">In Office only</button>
-        <button data-view="wfh">WFH only</button>
+  <div id="toast" class="toast"></div>
+  <div id="decisionBanner" style="display:none; margin-bottom:14px;"></div>
+  <div class="card">
+    <form id="reqForm">
+      <div class="field">
+        <label class="fl" for="agent">Your name</label>
+        <select id="agent" required><option value="">Select your name…</option></select>
       </div>
-      <label style="font-weight:600; color:var(--text); margin-left:14px">Group by:</label>
-      <div class="toggle-group" id="groupToggle">
-        <button data-group="team" class="active">Team / shift</button>
-        <button data-group="supervisor">Supervisor</button>
+      <div id="balanceBanner" class="rule-banner bank"></div>
+      <div class="field">
+        <label class="fl">What kind of request?</label>
+        <div class="pills" id="topPills">
+          <span class="pill" data-top="accom">Accommodation</span>
+          <span class="pill" data-top="ot_claim">Claim OT (earn credits)</span>
+          <span class="pill" data-top="extra_hours_wfh">Use Extra Hrs WFH</span>
+        </div>
       </div>
-      <span style="flex:1"></span>
-      <button class="btn-ghost" id="clearOverridesBtn">Clear overrides for this day</button>
-    </div>
-    <div class="summary" id="summary"></div>
-    <div class="heatmap-card">
-      <h3>Hourly headcount &amp; coverage <span style="font-size:11px; color:var(--muted); font-weight:400">— green ≥95% · amber 85–94% · red &lt;85%</span></h3>
-      <div class="heatmap-grid" id="heatmap"></div>
-    </div>
-    <div id="dailyContainer"></div>
-  </div>
-
-  <!-- ======== SCHEDULE VIEW ======== -->
-  <div class="tab-panel" id="tab-monthly">
-    <div class="controls">
-      <label style="font-weight:600; color:var(--text)">View:</label>
-      <div class="toggle-group" id="periodToggle">
-        <button data-period="day">Day</button>
-        <button data-period="week">Week</button>
-        <button data-period="month" class="active">Month</button>
+      <!-- Accommodation sub-types -->
+      <div class="type-detail" id="accomDetail">
+        <h4>What kind of accommodation?</h4>
+        <div class="sub-pills" id="accomPills">
+          <span class="sub-pill" data-sub="accom_wfh">Work from home</span>
+          <span class="sub-pill" data-sub="accom_early">Come in early</span>
+          <span class="sub-pill" data-sub="accom_late">Stay later</span>
+          <span class="sub-pill" data-sub="accom_office_change">Change my office day</span>
+          <span class="sub-pill" data-sub="accom_general">General / other</span>
+        </div>
+        <div id="generalTip" class="general-tip" style="display:none">
+          Use this for doctor appointments, making up time on another day, adjusted hours, leaving early for an appointment, or anything that doesn't fit the specific options above. Describe it in the Reason field — your supervisor will see the full note.
+        </div>
       </div>
-      <button class="btn-ghost" id="schedPrev">←</button>
-      <label>Start: <input type="date" id="schedDate" /></label>
-      <button class="btn-ghost" id="schedNext">→</button>
-      <button class="btn-ghost" id="schedToday">Today</button>
-      <span style="flex:1"></span>
-      <label>Search: <input type="text" id="schedSearch" placeholder="Filter by name…" /></label>
-      <label>Supervisor:
-        <select id="schedSupervisor"><option value="">All</option></select>
-      </label>
-      <label>Sort:
-        <select id="schedSort">
-          <option value="team">By team, then name</option>
-          <option value="name">By name (A–Z)</option>
-          <option value="supervisor">By supervisor, then name</option>
+      <!-- Date -->
+      <div class="field">
+        <label class="fl" for="date">Date</label>
+        <input type="date" id="date" required />
+      </div>
+      <div id="ruleStatus" class="rule-banner"></div>
+      <!-- Reason -->
+      <div class="field" id="reasonField">
+        <label class="fl" for="reason" id="reasonLabel">Reason</label>
+        <textarea id="reason" rows="2" placeholder="Brief context — appointment, childcare, making up time, etc."></textarea>
+      </div>
+      <div class="field" id="coverageField">
+        <label class="fl" for="coverage">Coverage plan <span style="color:var(--muted); font-weight:400">(optional)</span></label>
+        <textarea id="coverage" rows="2" placeholder="How will you stay covered / make up time?"></textarea>
+      </div>
+      <!-- OT claim fields -->
+      <div class="type-detail" id="otDetail">
+        <h4>Overtime details</h4>
+        <div class="row-2">
+          <div>
+            <label class="fl">Start time</label>
+            <input type="time" id="otStart" />
+          </div>
+          <div>
+            <label class="fl">End time</label>
+            <input type="time" id="otEnd" />
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--muted); margin:6px 0">
+          Hours: <strong id="otCalcHours">—</strong>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label class="fl">What you worked on</label>
+          <textarea id="otPurpose" rows="2" placeholder="Project, queue overflow, escalation…"></textarea>
+        </div>
+        <div class="field">
+          <label class="fl">Pre-authorized by <span style="color:var(--muted); font-weight:400">(optional)</span></label>
+          <input type="text" id="otAuth" placeholder="Supervisor name" />
+        </div>
+        <p class="type-help">1 credit per 4 hours of approved OT. No submission deadline.</p>
+      </div>
+      <button type="submit" class="submit" id="submitBtn">Review &amp; submit</button>
+    </form>
+    <div class="history">
+      <div class="h-title">
+        Your recent requests
+        <select id="historyFilter">
+          <option value="all">All</option>
+          <option value="pending">Pending only</option>
+          <option value="decided">Decided only</option>
         </select>
-      </label>
-    </div>
-    <div class="sched-wrap"><div id="schedTable"></div></div>
-  </div>
-
-  <!-- ======== COVERAGE HEATMAP ======== -->
-  <div class="tab-panel" id="tab-coverage">
-    <div class="controls">
-      <label style="font-weight:600; color:var(--text)">View:</label>
-      <div class="toggle-group" id="covPeriodToggle">
-        <button data-period="day">Day</button>
-        <button data-period="week" class="active">Week</button>
-        <button data-period="month">Month</button>
       </div>
-      <button class="btn-ghost" id="covPrev">←</button>
-      <label>Start: <input type="date" id="covDate" /></label>
-      <button class="btn-ghost" id="covNext">→</button>
-      <button class="btn-ghost" id="covToday">Today</button>
-      <span style="flex:1"></span>
-      <label>Supervisor:
-        <select id="covSupervisor"><option value="">All</option></select>
-      </label>
-    </div>
-    <div id="covContainer"></div>
-  </div>
-
-  <!-- ======== PENDING REQUESTS ======== -->
-  <div class="tab-panel" id="tab-pending">
-    <div id="pendingConfigWarn" class="config-warn" style="display:none">
-      <strong>Supabase not connected.</strong> Requests submitted via request.html won't appear here until Supabase is configured.
-    </div>
-    <div id="pendingConfigOk" class="config-ok" style="display:none">
-      <strong>✓ Connected to Supabase.</strong> Agent requests from request.html appear below in real time.
-    </div>
-    <div class="controls">
-      <button class="btn-ghost" id="refreshPendingBtn">Refresh</button>
-      <span id="pendingStatus" style="font-size:13px; color:var(--muted)"></span>
-      <span style="flex:1"></span>
-      <label>Show:
-        <select id="pendingFilter">
-          <option value="pending" selected>Pending only</option>
-          <option value="all">Pending + recent decisions</option>
-        </select>
-      </label>
-      <label>Supervisor:
-        <select id="pendingSupervisor"><option value="">All teams</option></select>
-      </label>
-    </div>
-    <div id="pendingList"></div>
-    <div class="req-history" id="pendingHistory"></div>
-  </div>
-
-  <!-- ======== BULK LEAVE ENTRY ======== -->
-  <div class="tab-panel" id="tab-leave">
-    <div class="report-card">
-      <h2>Enter PTO / Jiffy Day / Half Jiffy / Unpaid Leave</h2>
-      <p style="font-size:13px; color:var(--muted); margin-top:0">
-        These come from HR, not from the request flow. Enter them here and they'll show up on the Daily Status roster.
-        Half Jiffy counts as 0.5 days. <strong>Note:</strong> leave entered here overrides the static schedule for the date range — it works even without Supabase.
-      </p>
-      <div class="form-row">
-        <div>
-          <label class="form-label">Agent</label>
-          <select id="leaveAgent" style="width:100%"></select>
-        </div>
-        <div>
-          <label class="form-label">Type</label>
-          <select id="leaveType" style="width:100%">
-            <option value="pto">PTO</option>
-            <option value="jiffy_day">Jiffy Day</option>
-            <option value="half_jiffy">Half Jiffy</option>
-            <option value="unpaid">Unpaid Leave</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div>
-          <label class="form-label">Start date</label>
-          <input type="date" id="leaveStart" style="width:100%" />
-        </div>
-        <div>
-          <label class="form-label">End date</label>
-          <input type="date" id="leaveEnd" style="width:100%" />
-        </div>
-      </div>
-      <div>
-        <label class="form-label">Note (optional)</label>
-        <textarea id="leaveNote" rows="2" placeholder="e.g. Vacation, family event…"></textarea>
-      </div>
-      <button class="btn-primary" id="addLeaveBtn" style="margin-top:10px">Add leave entry</button>
-    </div>
-    <div class="report-card">
-      <h2>Leave entries</h2>
-      <div class="controls" style="margin-bottom:10px; padding:8px 12px">
-        <label>Show:
-          <select id="leaveListFilter">
-            <option value="upcoming" selected>Upcoming &amp; current</option>
-            <option value="all">All</option>
-          </select>
-        </label>
-        <label>Type:
-          <select id="leaveTypeFilter">
-            <option value="">All types</option>
-            <option value="pto">PTO</option>
-            <option value="jiffy_day">Jiffy Day</option>
-            <option value="half_jiffy">Half Jiffy</option>
-            <option value="unpaid">Unpaid</option>
-          </select>
-        </label>
-      </div>
-      <div id="leaveList"></div>
-    </div>
-  </div>
-
-  <!-- ======== ACCOMMODATION USAGE ======== -->
-  <div class="tab-panel" id="tab-usage">
-    <div class="controls">
-      <label>From: <input type="date" id="usageFrom" /></label>
-      <label>To: <input type="date" id="usageTo" /></label>
-      <button class="btn-ghost" id="usageQuickWeek">This week</button>
-      <button class="btn-ghost" id="usageQuickMonth">This month</button>
-      <button class="btn-ghost" id="usageQuick90">Last 90 days</button>
-      <span style="flex:1"></span>
-      <label>Supervisor:
-        <select id="usageSupervisor"><option value="">All</option></select>
-      </label>
-      <button class="btn-ghost" id="exportUsageBtn">Download CSV</button>
-    </div>
-    <div class="report-card">
-      <h2>Accommodations per agent</h2>
-      <div class="chart-container"><canvas id="usageChart"></canvas></div>
-    </div>
-    <div class="report-card">
-      <h2>Submission tracking — all requests (incl. denied)</h2>
-      <p style="font-size:12px; color:var(--muted); margin-top:0">Every accommodation submission is tracked here whether or not it was approved. Last-minute = submitted within 24h of the requested date.</p>
-      <table class="report" id="submissionTable"></table>
-    </div>
-    <div class="report-card">
-      <h2>Detail — approved accommodations</h2>
-      <table class="report" id="usageTable"></table>
-    </div>
-  </div>
-
-  <!-- ======== EXTRA HOURS BANK ======== -->
-  <div class="tab-panel" id="tab-bank">
-    <div class="config-warn" style="background:#ccfbf1; border-color:#5eead4; color:#0f766e">
-      <strong>How earning works:</strong> agents submit OT claims via request.html. When you approve here, credits are banked automatically.
-    </div>
-    <div class="config-warn" style="background:#fef3c7; border-color:#fde68a; color:var(--warn)">
-      <strong>Expiry policy:</strong> all earned Extra Hours credits expire <strong>December 31, 2026</strong>.
-    </div>
-    <div class="controls">
-      <label>Search: <input type="text" id="bankSearch" placeholder="Filter by name…" /></label>
-      <label>Supervisor:
-        <select id="bankSupervisor"><option value="">All</option></select>
-      </label>
-    </div>
-    <div class="report-card">
-      <table class="report" id="bankTable"></table>
-    </div>
-  </div>
-
-  <!-- ======== TRENDS ======== -->
-  <div class="tab-panel" id="tab-trends">
-    <div class="controls">
-      <label>From: <input type="date" id="trendFrom" /></label>
-      <label>To: <input type="date" id="trendTo" /></label>
-      <button class="btn-ghost" id="trendQuick30">Last 30 days</button>
-      <button class="btn-ghost" id="trendQuick90">Last 90 days</button>
-    </div>
-    <div class="report-card">
-      <h2>Accommodations over time — top 5 users</h2>
-      <div class="chart-container" style="height:300px"><canvas id="trendAccomChart"></canvas></div>
-    </div>
-    <div class="report-card">
-      <h2>Top accommodation users</h2>
-      <table class="report" id="topUsersTable"></table>
-    </div>
-    <div class="report-card">
-      <h2>By supervisor — accommodation volume</h2>
-      <table class="report" id="supervisorBreakdownTable"></table>
-    </div>
-    <div class="report-card">
-      <h2>Hourly coverage % — by day of week</h2>
-      <div class="chart-container" style="height:340px"><canvas id="trendCoverageChart"></canvas></div>
-    </div>
-    <div class="report-card">
-      <h2>Daily leave count over time</h2>
-      <div class="chart-container"><canvas id="trendLeaveChart"></canvas></div>
+      <div id="historyList"><div class="empty">Pick your name above to see your history.</div></div>
     </div>
   </div>
 </div>
-
-<!-- Schedule Editor Modal -->
-<div class="modal-backdrop" id="scheduleModal">
-  <div class="modal" style="max-width:800px">
+<!-- Confirmation Modal -->
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal">
     <div class="modal-head">
-      <h2>Static Weekly Schedule</h2>
+      <h2>Review your request</h2>
       <button class="modal-close" data-close-modal>×</button>
     </div>
-    <div class="modal-body">
-      <p style="font-size:13px; color:var(--muted); margin-top:0">
-        Click any day cell to cycle Office → WFH → Day Off.
-      </p>
-      <table class="schedule-table" id="scheduleTable"></table>
-      <div class="form-row" style="margin-top:14px">
-        <input type="text" id="newAgentName" placeholder="New agent name" />
-        <input type="text" id="newAgentSupervisor" placeholder="Supervisor" />
-        <input type="text" id="newAgentTeam" placeholder="Team / shift" />
-        <button class="btn-primary" id="addAgentBtn">Add Agent</button>
-      </div>
+    <div class="modal-body" id="confirmBody"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" data-close-modal>Cancel — keep editing</button>
+      <button class="btn-confirm" id="confirmSendBtn">Confirm &amp; send</button>
     </div>
   </div>
 </div>
-
-<!-- Settings Modal -->
-<div class="modal-backdrop" id="settingsModal">
-  <div class="modal" style="max-width:540px">
-    <div class="modal-head">
-      <h2>Settings</h2>
-      <button class="modal-close" data-close-modal>×</button>
-    </div>
-    <div class="modal-body">
-      <label style="display:block; margin-bottom:14px">
-        <div class="form-label">Max Accommodation WFH per week per agent</div>
-        <input type="number" id="settingFlexLimit" min="0" max="7" style="width:80px" />
-        <div style="font-size:11px; color:var(--muted); margin-top:3px">Per-agent guardrail. Supervisors can still approve beyond this.</div>
-      </label>
-      <label style="display:block; margin-bottom:14px">
-        <div class="form-label">Hours per Extra Hours WFH credit</div>
-        <input type="number" id="settingHoursPerCredit" min="1" max="40" style="width:80px" />
-      </label>
-      <label style="display:block; margin-bottom:14px">
-        <div class="form-label">OT claim cutoff (days from date worked)</div>
-        <input type="number" id="settingOtCutoff" min="1" max="60" style="width:80px" />
-      </label>
-      <label style="display:block; margin-bottom:14px">
-        <div class="form-label">Extra Hours expiry date</div>
-        <input type="date" id="settingExtraExpiry" style="width:160px" />
-      </label>
-      <label style="display:block; margin-bottom:14px">
-        <div class="form-label">Coverage targets (%) — green / amber thresholds</div>
-        <div style="display:flex; gap:8px; align-items:center">
-          ≥ <input type="number" id="settingCovGreen" min="0" max="100" style="width:60px" />% green,
-          ≥ <input type="number" id="settingCovAmber" min="0" max="100" style="width:60px" />% amber, else red
-        </div>
-      </label>
-      <label style="display:block; margin-bottom:14px">
-        <div class="form-label">Week starts on</div>
-        <select id="settingWeekStart">
-          <option value="1">Monday</option>
-          <option value="0">Sunday</option>
-        </select>
-      </label>
-      <button class="btn-primary" id="saveSettings">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- Coverage Detail Modal -->
-<div class="modal-backdrop" id="covDetailModal">
-  <div class="modal" style="max-width:640px">
-    <div class="modal-head">
-      <h2 id="covDetailTitle">Staffing detail</h2>
-      <button class="modal-close" data-close-modal>×</button>
-    </div>
-    <div class="modal-body" id="covDetailBody"></div>
-  </div>
-</div>
-
-<!-- Bank Detail Modal -->
-<div class="modal-backdrop" id="bankModal">
-  <div class="modal" style="max-width:640px">
-    <div class="modal-head">
-      <h2 id="bankModalTitle">Extra Hours Ledger</h2>
-      <button class="modal-close" data-close-modal>×</button>
-    </div>
-    <div class="modal-body" id="bankModalBody"></div>
-  </div>
-</div>
-
-<!-- General Accommodation Note Modal -->
-<div class="modal-backdrop" id="accomNoteModal">
-  <div class="modal accom-note-modal">
-    <div class="modal-head">
-      <h2>General Accommodation — add note</h2>
-      <button class="modal-close" id="accomNoteCancel">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px; color:var(--muted); margin-top:0">
-        Use this for doctor appointments, makeup time, adjusted hours, or any accommodation that doesn't fit a specific category.
-      </p>
-      <label class="form-label">Brief note <span style="color:var(--muted); font-weight:400">(required)</span></label>
-      <input type="text" id="accomNoteInput" placeholder="e.g. Doctor appt – making up time Fri, Left early for family emergency…" style="width:100%; margin-bottom:12px" />
-      <button class="btn-primary" id="accomNoteConfirm" style="width:100%">Save accommodation note</button>
-    </div>
-  </div>
-</div>
-
 <script type="module">
-  // ============================================
-  // CONFIG — paste your Supabase keys here
   const SUPABASE_URL = 'https://kjaoapqungpjeowwhegj.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_IXMlfV41W0hFhPAcZokZHA_bQoC8QPT';
-  // ============================================
+  const HOURS_PER_CREDIT = 4;
+  const ACCOM_WFH_WEEKLY_CAP = 1;
 
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-  // Robust config check — key must be non-empty and not a placeholder
-  const supabaseConfigured = Boolean(
-    SUPABASE_URL && !SUPABASE_URL.startsWith('PASTE_') &&
-    SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('PASTE_') &&
-    SUPABASE_URL.startsWith('https://')
-  );
-
-  let supabase = null;
-  let supabaseConnected = false;
-
-  if (supabaseConfigured) {
-    try {
-      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      // Will verify connectivity on first fetch
-    } catch(e) {
-      console.warn('Supabase init failed:', e);
-    }
+  const configured = Boolean(SUPABASE_URL && !SUPABASE_URL.startsWith('PASTE_') && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('PASTE_'));
+  if (!configured) {
+    document.getElementById('configWarn').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
   }
+  const supabase = configured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-  const STORAGE_KEY = 'agentTracker.v5'; // bumped to force fresh load with new structure
-
-  const STATUSES = {
-    office:               { label:'In Office',       short:'Office',        class:'office' },
-    wfh:                  { label:'WFH',             short:'WFH',           class:'wfh' },
-    accom_wfh:            { label:'Accom: WFH',      short:'Accom WFH',     class:'accom_wfh' },
-    accom_early:          { label:'Accom: Early',    short:'Accom Early',   class:'accom_early' },
-    accom_late:           { label:'Accom: Late',     short:'Accom Late',    class:'accom_late' },
-    accom_office_change:  { label:'Office swap',     short:'Office swap',   class:'accom_office_change' },
-    accom_general:        { label:'Accom: General',  short:'Accom General', class:'accom_general' },
-    extra_hours_wfh:      { label:'Extra Hrs WFH',   short:'Extra Hrs',     class:'extra_hours_wfh' },
-    pto:                  { label:'PTO',             short:'PTO',           class:'pto' },
-    jiffy_day:            { label:'Jiffy Day',       short:'Jiffy',         class:'jiffy_day' },
-    half_jiffy:           { label:'Half Jiffy',      short:'½ Jiffy',       class:'half_jiffy' },
-    unpaid:               { label:'Unpaid Leave',    short:'Unpaid',        class:'unpaid' },
-    off:                  { label:'Day Off',         short:'Off',           class:'off' },
-  };
-
-  const ACCOM_TYPES = ['accom_wfh','accom_early','accom_late','accom_office_change','accom_general'];
-  // FIX: leave types handled locally via overrides — no longer require Supabase
-  const LEAVE_TYPES = ['pto','jiffy_day','half_jiffy','unpaid'];
-  const ALL_OVERRIDE_TYPES = [...ACCOM_TYPES, 'extra_hours_wfh', ...LEAVE_TYPES];
-
-  const TEAM_ORDER = ["6:00–2:30", "8:00–4:30", "11:30–8:00 (A)", "11:30–8:00 (B)"];
-  const DEFAULT_EXTRA_EXPIRY = '2026-12-31';
-
-  const SHIFT_HOURS = {
-    "6:00–2:30":      { start: 6,    end: 14.5 },
-    "8:00–4:30":      { start: 8,    end: 16.5 },
-    "11:30–8:00 (A)": { start: 11.5, end: 20 },
-    "11:30–8:00 (B)": { start: 11.5, end: 20 },
-  };
-
-  const SEED_AGENTS = [
-    { name:"Rosa Nuno",         supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'wfh',   6:'off',0:'off'}},
-    { name:"Cristie Avant",     supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'wfh',  2:'wfh',  3:'office',4:'office',5:'office', 6:'off',0:'off'}},
-    { name:"Amber Bailey",      supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'office',2:'wfh',  3:'wfh',  4:'office',5:'office', 6:'off',0:'off'}},
-    { name:"Sam De Castro",     supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'office',2:'office',3:'wfh',  4:'office',5:'wfh',   6:'off',0:'off'}},
-    { name:"Rachel Dunlap",     supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'off',  2:'office',3:'office',4:'office',5:'wfh',   6:'wfh', 0:'off'}},
-    { name:"Sarah Hajiali",     supervisor:"Neyat",   team:"6:00–2:30",       schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'off',   6:'wfh', 0:'off'}},
-    { name:"Unaisa Aslam",      supervisor:"Neyat",   team:"6:00–2:30",       schedule:{1:'office',2:'office',3:'off',  4:'wfh',  5:'office', 6:'wfh', 0:'off'}},
-    { name:"Bo Repko",          supervisor:"Neyat",   team:"8:00–4:30",       schedule:{1:'office',2:'office',3:'wfh',  4:'office',5:'wfh',   6:'off', 0:'off'}},
-    { name:"Asia Campbell",     supervisor:"Neyat",   team:"8:00–4:30",       schedule:{1:'wfh',  2:'office',3:'office',4:'office',5:'off',   6:'wfh', 0:'off'}},
-    { name:"Preston Panetti",   supervisor:"Neyat",   team:"8:00–4:30",       schedule:{1:'office',2:'office',3:'off',  4:'wfh',  5:'office', 6:'wfh', 0:'off'}},
-    { name:"Michael Scott Chavez", supervisor:"Katie",team:"8:00–4:30",       schedule:{1:'office',2:'office',3:'office',4:'off',  5:'wfh',   6:'wfh', 0:'off'}},
-    { name:"Andre Cordero",     supervisor:"Katie",   team:"8:00–4:30",       schedule:{1:'off',  2:'office',3:'office',4:'office',5:'wfh',   6:'wfh', 0:'off'}},
-    { name:"Damian Doubrava",   supervisor:"Katie",   team:"8:00–4:30",       schedule:{1:'wfh',  2:'off',  3:'office',4:'office',5:'office', 6:'wfh', 0:'off'}},
-    { name:"Eri Dotson",        supervisor:"Katie",   team:"8:00–4:30",       schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'off',   6:'wfh', 0:'off'}},
-    { name:"Bicky Purewal",     supervisor:"Lauren",  team:"11:30–8:00 (A)",  schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'wfh',   6:'off', 0:'off'}},
-    { name:"Jessie Gregory",    supervisor:"Lauren",  team:"11:30–8:00 (A)",  schedule:{1:'wfh',  2:'office',3:'office',4:'office',5:'wfh',   6:'off', 0:'off'}},
-    { name:"Enrico Davis",      supervisor:"Lauren",  team:"11:30–8:00 (A)",  schedule:{1:'office',2:'wfh',  3:'wfh',  4:'office',5:'office', 6:'off', 0:'off'}},
-    { name:"Blanca Berumen",    supervisor:"Lauren",  team:"11:30–8:00 (A)",  schedule:{1:'office',2:'office',3:'wfh',  4:'wfh',  5:'office', 6:'off', 0:'off'}},
-    { name:"Salia Kibibi",      supervisor:"Katie",   team:"11:30–8:00 (A)",  schedule:{1:'office',2:'wfh',  3:'off',  4:'office',5:'office', 6:'wfh', 0:'off'}},
-    { name:"Brianna Miller",    supervisor:"Lauren",  team:"11:30–8:00 (A)",  schedule:{1:'wfh',  2:'off',  3:'wfh',  4:'wfh',  5:'wfh',   6:'wfh', 0:'off'}},
-    { name:"Jada Brown",        supervisor:"Katie",   team:"11:30–8:00 (A)",  schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'off',   6:'wfh', 0:'off'}},
-    { name:"Sarah Al-Obaidi",   supervisor:"Ainsley", team:"11:30–8:00 (A)",  schedule:{1:'off',  2:'office',3:'office',4:'wfh',  5:'office', 6:'wfh', 0:'off'}},
-    { name:"Ariashe Lowery",    supervisor:"Ainsley", team:"11:30–8:00 (B)",  schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'wfh',   6:'off', 0:'off'}},
-    { name:"Jeremy Carrillo",   supervisor:"Lauren",  team:"11:30–8:00 (B)",  schedule:{1:'wfh',  2:'office',3:'office',4:'office',5:'wfh',   6:'off', 0:'off'}},
-    { name:"Taylor Amos",       supervisor:"Ainsley", team:"11:30–8:00 (B)",  schedule:{1:'wfh',  2:'wfh',  3:'office',4:'office',5:'office', 6:'off', 0:'off'}},
-    { name:"Bianca Young",      supervisor:"Ainsley", team:"11:30–8:00 (B)",  schedule:{1:'office',2:'office',3:'off',  4:'wfh',  5:'office', 6:'wfh', 0:'off'}},
-    { name:"Ramila Chaulagain", supervisor:"Ainsley", team:"11:30–8:00 (B)",  schedule:{1:'off',  2:'office',3:'office',4:'office',5:'wfh',   6:'wfh', 0:'off'}},
-    { name:"Vitria Pinkston",   supervisor:"Ainsley", team:"11:30–8:00 (B)",  schedule:{1:'office',2:'off',  3:'office',4:'office',5:'wfh',   6:'wfh', 0:'off'}},
+  const AGENTS = [
+    { name:"Rosa Nuno", supervisor:"Angy", team:"6:00–2:30" },
+    { name:"Cristie Avant", supervisor:"Angy", team:"6:00–2:30" },
+    { name:"Amber Bailey", supervisor:"Angy", team:"6:00–2:30" },
+    { name:"Sam De Castro", supervisor:"Angy", team:"6:00–2:30" },
+    { name:"Rachel Dunlap", supervisor:"Angy", team:"6:00–2:30" },
+    { name:"Sarah Hajiali", supervisor:"Neyat", team:"6:00–2:30" },
+    { name:"Unaisa Aslam", supervisor:"Neyat", team:"6:00–2:30" },
+    { name:"Bo Repko", supervisor:"Neyat", team:"8:00–4:30" },
+    { name:"Asia Campbell", supervisor:"Neyat", team:"8:00–4:30" },
+    { name:"Preston Panetti", supervisor:"Neyat", team:"8:00–4:30" },
+    { name:"Michael Scott Chavez", supervisor:"Katie", team:"8:00–4:30" },
+    { name:"Andre Cordero", supervisor:"Katie", team:"8:00–4:30" },
+    { name:"Damian Doubrava", supervisor:"Katie", team:"8:00–4:30" },
+    { name:"Eri Dotson", supervisor:"Katie", team:"8:00–4:30" },
+    { name:"Bicky Purewal", supervisor:"Lauren", team:"11:30–8:00 (A)" },
+    { name:"Jessie Gregory", supervisor:"Lauren", team:"11:30–8:00 (A)" },
+    { name:"Enrico Davis", supervisor:"Lauren", team:"11:30–8:00 (A)" },
+    { name:"Blanca Berumen", supervisor:"Lauren", team:"11:30–8:00 (A)" },
+    { name:"Salia Kibibi", supervisor:"Katie", team:"11:30–8:00 (A)" },
+    { name:"Brianna Miller", supervisor:"Lauren", team:"11:30–8:00 (A)" },
+    { name:"Jada Brown", supervisor:"Katie", team:"11:30–8:00 (A)" },
+    { name:"Sarah Al-Obaidi", supervisor:"Ainsley", team:"11:30–8:00 (A)" },
+    { name:"Ariashe Lowery", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Jeremy Carrillo", supervisor:"Lauren", team:"11:30–8:00 (B)" },
+    { name:"Taylor Amos", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Bianca Young", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Ramila Chaulagain", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Vitria Pinkston", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
   ];
 
-  // ---- State ----
-  let state = loadState();
-  let selectedDate = todayISO();
-  let activeTab = 'daily';
-  let viewMode = 'all';
-  let groupMode = 'team';
-  let searchText = '';
-  let supervisorFilter = '';
-  let pendingRequests = [];
-  let pendingFilter = 'pending';
-  let pendingSupervisorFilter = '';
-  // FIX: manualLeaves now stored in state.manualLeaves (persistent, no Supabase required)
-  let ledgerEntries = [];
-  let usageFrom, usageTo, usageSupervisor = '';
-  let trendFrom, trendTo;
-  let bankSearch = '', bankSupervisor = '';
-  let leaveListFilter = 'upcoming', leaveTypeFilter = '';
-  let chartUsage, chartTrendAccom, chartTrendLeave, chartTrendCoverage;
-  let schedPeriod = 'week';
-  let schedStart = todayISO();
-  let schedSearch = '';
-  let schedSupervisor = '';
-  let schedSort = 'team';
-  let covPeriod = 'week';
-  let covStart = todayISO();
-  let covSupervisor = '';
-  // For accom_general note prompt
-  let pendingAccomGeneralAgentId = null;
+  const TYPE_LABEL = {
+    accom_wfh:'Accommodation: Work from home',
+    accom_early:'Accommodation: Come in early',
+    accom_late:'Accommodation: Stay later',
+    accom_office_change:'Accommodation: Office day change',
+    accom_general:'Accommodation: General / other',
+    extra_hours_wfh:'Use Extra Hrs WFH (earned reward)',
+    ot_claim:'Claim OT — earn credits'
+  };
 
-  function uid() { return Math.random().toString(36).slice(2, 10); }
-  function todayISO() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function defaultSettings() {
-    return { flexLimitPerWeek:1, hoursPerCredit:4, otCutoffDays:14,
-             coverageGreen:95, coverageAmber:85, weekStart:1, extraExpiry: DEFAULT_EXTRA_EXPIRY };
-  }
-  function defaultState() {
-    return {
-      agents: SEED_AGENTS.map(a => ({ id: uid(), ...a, schedule: { ...a.schedule } })),
-      overrides: {},
-      // FIX: manualLeaves now lives in state (localStorage) — no Supabase required
-      manualLeaves: [],
-      submissions: [],
-      settings: defaultSettings(),
-    };
-  }
-
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (data && Array.isArray(data.agents) && data.agents.length) {
-          if (!data.settings) data.settings = defaultSettings();
-          Object.assign(data.settings, { ...defaultSettings(), ...data.settings });
-          if (!data.overrides) data.overrides = {};
-          if (!Array.isArray(data.submissions)) data.submissions = [];
-          // FIX: migrate manualLeaves from old format if missing
-          if (!Array.isArray(data.manualLeaves)) data.manualLeaves = [];
-          // Fix known schedule corrections
-          data.agents.forEach(a => {
-            if (a.name === 'Michael Scott Chavez')
-              a.schedule = {1:'office',2:'office',3:'office',4:'off',5:'wfh',6:'wfh',0:'off'};
-            if (a.name === 'Brianna Miller')
-              a.schedule = {1:'wfh',2:'off',3:'wfh',4:'wfh',5:'wfh',6:'wfh',0:'off'};
-          });
-          return data;
-        }
-      }
-    } catch(e) {}
-    return defaultState();
-  }
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-  // ---- manualLeaves helpers (all local now) ----
-  function getManualLeaves() { return state.manualLeaves || []; }
-
-  // ---- Status resolution ----
-  // Overrides now support TWO independent layers per agent per date:
-  //   o.leaveType  — HR leave (pto/jiffy_day/half_jiffy/unpaid) — set via dropdown
-  //   o.accomType  — Accommodation or extra hours — set via buttons
-  //   o.type       — legacy single-type (backward compat)
-  //
-  // Half Jiffy is partial: if paired with an accom, accom shows as primary status
-  // but they are counted separately in coverage math.
-
-  function leaveForDate(agent, dateISO) {
-    const ml = getManualLeaves().find(l =>
-      l.agent_name === agent.name && dateISO >= l.start_date && dateISO <= l.end_date
-    );
-    if (ml) return ml.leave_type;
-    const o = state.overrides[dateISO]?.[agent.id];
-    if (o?.leaveType) return o.leaveType;
-    if (o?.type && LEAVE_TYPES.includes(o.type)) return o.type;
-    return null;
-  }
-
-  function accomForDate(agent, dateISO) {
-    const o = state.overrides[dateISO]?.[agent.id];
-    if (o?.accomType) return o.accomType;
-    if (o?.type && (ACCOM_TYPES.includes(o.type) || o.type === 'extra_hours_wfh')) return o.type;
-    return null;
-  }
-
-  function statusForDate(agent, dateISO) {
-    const leave = leaveForDate(agent, dateISO);
-    const accom = accomForDate(agent, dateISO);
-    // Half jiffy is partial — if there's also an accommodation, show accom as primary pill
-    if (leave === 'half_jiffy' && accom) return accom;
-    if (leave) return leave;
-    if (accom) return accom;
-    const dow = new Date(dateISO + 'T00:00:00').getDay();
-    return agent.schedule[dow] || 'off';
-  }
-
-  // ---- Date helpers ----
-  function isoFromDate(d) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function startOfWeek(dateISO) {
-    const d = new Date(dateISO + 'T00:00:00');
-    const ws = state.settings.weekStart;
-    const diff = (d.getDay() - ws + 7) % 7;
-    d.setDate(d.getDate() - diff);
-    return isoFromDate(d);
-  }
-  function endOfWeek(dateISO) {
-    const s = new Date(startOfWeek(dateISO) + 'T00:00:00');
-    s.setDate(s.getDate() + 6);
-    return isoFromDate(s);
-  }
-  function addDays(dateISO, n) {
-    const d = new Date(dateISO + 'T00:00:00');
-    d.setDate(d.getDate() + n);
-    return isoFromDate(d);
-  }
-
-  // ---- Supabase data fetch ----
-  async function fetchAllSupabase() {
-    if (!supabase) {
-      document.getElementById('pendingConfigWarn').style.display = 'block';
-      document.getElementById('pendingConfigOk').style.display = 'none';
-      return;
-    }
-    try {
-      const [{ data: reqs, error: reqErr }, { data: ledger }] = await Promise.all([
-        supabase.from('requests').select('*').order('created_at', { ascending: true }),
-        supabase.from('extra_hours_ledger').select('*').order('created_at', { ascending: false }),
-      ]);
-      if (reqErr) throw reqErr;
-      supabaseConnected = true;
-      pendingRequests = reqs || [];
-      ledgerEntries = ledger || [];
-      document.getElementById('pendingConfigWarn').style.display = 'none';
-      document.getElementById('pendingConfigOk').style.display = 'block';
-    } catch(e) {
-      supabaseConnected = false;
-      document.getElementById('pendingConfigWarn').style.display = 'block';
-      document.getElementById('pendingConfigOk').style.display = 'none';
-      console.warn('Supabase fetch error:', e);
-    }
-    updatePendingBadge();
-    render();
-  }
-
-  function updatePendingBadge() {
-    const count = pendingRequests.filter(r => r.status === 'pending').length;
-    const badge = document.getElementById('pendingBadge');
-    if (count > 0) { badge.style.display = 'inline-block'; badge.textContent = count; }
-    else badge.style.display = 'none';
-  }
-
-  function isLastMinuteRequest(r) {
-    if (!r) return false;
-    if (r.manualLastMinute === true) return true;
-    if (!r.created_at || !r.request_date) return false;
-    const created = new Date(r.created_at);
-    const requested = new Date(r.request_date + 'T23:59:59');
-    return (requested - created) <= 24 * 3600 * 1000;
-  }
-
-  // ---- Filtered agents ----
-  function filteredAgents() {
-    return state.agents.filter(a => {
-      if (searchText && !a.name.toLowerCase().includes(searchText.toLowerCase())) return false;
-      if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
-      if (viewMode !== 'all') {
-        const s = statusForDate(a, selectedDate);
-        if (viewMode === 'office' && !['office','accom_office_change'].includes(s)) return false;
-        if (viewMode === 'wfh' && !['wfh','accom_wfh','accom_early','accom_late','accom_general','extra_hours_wfh'].includes(s)) return false;
-      }
-      return true;
-    });
-  }
-
-  // ---- Daily Status render ----
-  function renderDaily() {
-    document.getElementById('datePicker').value = selectedDate;
-    const d = new Date(selectedDate + 'T00:00:00');
-    document.getElementById('dateDisplay').textContent =
-      d.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
-    populateSelect('supervisorFilter', supervisorFilter);
-    renderSummary();
-    renderHeatmap();
-    renderAgentGroups();
-  }
-
-  function populateSelect(id, value) {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const sups = [...new Set(state.agents.map(a => a.supervisor).filter(Boolean))].sort();
-    sel.innerHTML = '<option value="">All</option>' + sups.map(s =>
-      `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
-    sel.value = value || '';
-  }
-
-  function renderSummary() {
-    const counts = {
-      office:0, wfh:0, accom:0, accom_wfh:0, accom_early:0, accom_late:0,
-      accom_office_change:0, accom_general:0,
-      extra_hours_wfh:0, pto:0, jiffy_day:0, half_jiffy:0, unpaid:0, off:0
-    };
-    const visible = state.agents.filter(a => {
-      if (searchText && !a.name.toLowerCase().includes(searchText.toLowerCase())) return false;
-      if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
-      return true;
-    });
-    visible.forEach(a => {
-      const leave = leaveForDate(a, selectedDate);
-      const accom = accomForDate(a, selectedDate);
-      const s = statusForDate(a, selectedDate);
-      if (leave && counts[leave] !== undefined) counts[leave]++;
-      if (accom && counts[accom] !== undefined) counts[accom]++;
-      if (!leave && !accom) { if (counts[s] !== undefined) counts[s]++; }
-      if (accom && ACCOM_TYPES.includes(accom)) counts.accom++;
-      else if (!leave && ACCOM_TYPES.includes(s)) counts.accom++;
-    });
-    const dow = new Date(selectedDate + 'T00:00:00').getDay();
-    const scheduled = visible.filter(a => (a.schedule[dow] || 'off') !== 'off').length;
-    // half_jiffy = 0.5 absence; pto/jiffy_day/unpaid = full absence
-    const onLeave = visible.filter(a => {
-      const lv = leaveForDate(a, selectedDate);
-      return lv === 'pto' || lv === 'jiffy_day' || lv === 'unpaid';
-    }).length + visible.filter(a => leaveForDate(a, selectedDate) === 'half_jiffy').length * 0.5;
-    const working = Math.round(scheduled - onLeave);
-    const coveragePct = scheduled === 0 ? 0 : Math.round(100 * working / scheduled);
-    const cls = coveragePct >= state.settings.coverageGreen ? '' :
-                coveragePct >= state.settings.coverageAmber ? 'amber' : 'red';
-    const accomBreakdown = [
-      counts.accom_wfh ? `<b>${counts.accom_wfh}</b> WFH` : '',
-      counts.accom_early ? `<b>${counts.accom_early}</b> Early` : '',
-      counts.accom_late ? `<b>${counts.accom_late}</b> Late` : '',
-      counts.accom_office_change ? `<b>${counts.accom_office_change}</b> Office swap` : '',
-      counts.accom_general ? `<b>${counts.accom_general}</b> General` : '',
-    ].filter(Boolean).join(' · ');
-    const cards = [
-      { key:'office',   label:'In Office',      value: counts.office },
-      { key:'wfh',      label:'Regular WFH',    value: counts.wfh,            sub:'From schedule' },
-      { key:'accom',    label:'Accommodations', value: counts.accom,          breakdown: accomBreakdown },
-      { key:'extra',    label:'Extra Hrs WFH',  value: counts.extra_hours_wfh, sub:'Redeemed credits' },
-      { key:'pto',      label:'PTO',            value: counts.pto },
-      { key:'jiffy',    label:'Jiffy Days',     value: counts.jiffy_day },
-      { key:'halfjiffy',label:'Half Jiffy',     value: counts.half_jiffy,      sub:'0.5 day each' },
-      { key:'unpaid',   label:'Unpaid',         value: counts.unpaid },
-      { key:'off',      label:'Day Off',        value: counts.off },
-      { key:'coverage', label:'Staffing Coverage', value: coveragePct+'%',
-        sub:`${working}/${scheduled} working`, extraClass: cls },
-    ];
-    document.getElementById('summary').innerHTML = cards.map(c => `
-      <div class="stat ${c.key} ${c.extraClass||''}">
-        <div class="label">${c.label}</div>
-        <div class="value">${c.value}</div>
-        ${c.breakdown ? `<div class="breakdown">${c.breakdown}</div>` : ''}
-        ${c.sub ? `<div class="breakdown">${c.sub}</div>` : ''}
-      </div>`).join('');
-  }
-
-  function renderHeatmap() {
-    const hours = []; for (let h=6; h<=20; h++) hours.push(h);
-    const visible = state.agents.filter(a => {
-      if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
-      return true;
-    });
-    const dow = new Date(selectedDate + 'T00:00:00').getDay();
-    const cells = hours.map(h => {
-      let scheduled = 0, working = 0;
-      visible.forEach(a => {
-        const sh = SHIFT_HOURS[a.team]; if (!sh) return;
-        if (h < Math.floor(sh.start) || h >= Math.ceil(sh.end)) return;
-        if ((a.schedule[dow] || 'off') === 'off') return;
-        scheduled++;
-        const lv = leaveForDate(a, selectedDate);
-        // half_jiffy = partial day, counts as present for coverage; full leave = absent
-        if (!lv || lv === 'half_jiffy') working++;
-      });
-      const pct = scheduled === 0 ? null : Math.round(100 * working / scheduled);
-      const cls = pct === null ? 'hm-empty' :
-                  pct >= state.settings.coverageGreen ? 'hm-good' :
-                  pct >= state.settings.coverageAmber ? 'hm-ok' : 'hm-bad';
-      return { hour:h, pct, working, scheduled, cls };
-    });
-    document.getElementById('heatmap').innerHTML = cells.map(c => `
-      <div class="heatmap-cell ${c.cls}" title="${c.working}/${c.scheduled} working">
-        <div style="font-weight:600">${formatHour(c.hour)}</div>
-        <div style="font-size:13px; font-weight:700; margin-top:2px">${c.pct===null?'—':c.pct+'%'}</div>
-        <div class="hm-label">${c.working}/${c.scheduled}</div>
-      </div>`).join('');
-  }
-
-  function formatHour(h) {
-    const ampm = h < 12 ? 'a' : 'p';
-    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${h12}${ampm}`;
-  }
-
-  function renderAgentGroups() {
-    const list = filteredAgents();
-    const container = document.getElementById('dailyContainer');
-    if (list.length === 0) {
-      container.innerHTML = '<div class="empty">No agents match the current filters.</div>'; return;
-    }
-    const groups = {};
-    list.forEach(a => {
-      const key = groupMode === 'team' ? (a.team || 'Other') : (a.supervisor || 'Unassigned');
-      (groups[key] ||= []).push(a);
-    });
-    const orderedKeys = groupMode === 'team'
-      ? [...TEAM_ORDER, ...Object.keys(groups).filter(k => !TEAM_ORDER.includes(k))].filter(k => groups[k])
-      : Object.keys(groups).sort();
-    container.innerHTML = '';
-    orderedKeys.forEach(k => {
-      const arr = groups[k].sort((a,b) => a.name.localeCompare(b.name));
-      const counts = countByStatus(arr, selectedDate);
-      const sec = document.createElement('div');
-      sec.className = 'group-section';
-      const accomTotal = ACCOM_TYPES.reduce((s,t) => s + (counts[t]||0), 0);
-      const chips = [];
-      if (counts.office)          chips.push(`<span class="count-chip" style="background:#ecfdf5;color:#065f46">🏢 ${counts.office} Office</span>`);
-      if (counts.wfh)             chips.push(`<span class="count-chip" style="background:#eff6ff;color:#1e40af">🏠 ${counts.wfh} WFH</span>`);
-      if (accomTotal)             chips.push(`<span class="count-chip" style="background:#fef3c7;color:#92400e">⚡ ${accomTotal} Accom</span>`);
-      if (counts.extra_hours_wfh) chips.push(`<span class="count-chip" style="background:#ccfbf1;color:#0f766e">🎁 ${counts.extra_hours_wfh} Extra</span>`);
-      if (counts.pto)             chips.push(`<span class="count-chip" style="background:#fee2e2;color:#991b1b">🌴 ${counts.pto} PTO</span>`);
-      if (counts.jiffy_day)       chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">J ${counts.jiffy_day}</span>`);
-      if (counts.half_jiffy)      chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">½J ${counts.half_jiffy}</span>`);
-      if (counts.unpaid)          chips.push(`<span class="count-chip" style="background:#f3e8ff;color:#6b21a8">U ${counts.unpaid}</span>`);
-      if (counts.off)             chips.push(`<span class="count-chip">— ${counts.off} Off</span>`);
-      sec.innerHTML = `
-        <div class="group-header">
-          <div>
-            <h3>${groupMode==='team'?'Team ':' '}${escapeHtml(k)}</h3>
-            <div class="group-meta">${arr.length} agent${arr.length===1?'':'s'}</div>
-          </div>
-          <div class="group-counts">${chips.join('')}</div>
-        </div>
-        <div class="group-body"></div>`;
-      const body = sec.querySelector('.group-body');
-      arr.forEach(agent => body.appendChild(renderAgentRow(agent)));
-      container.appendChild(sec);
-    });
-  }
-
-  function countByStatus(arr, dateISO) {
-    const c = {};
-    Object.keys(STATUSES).forEach(k => c[k] = 0);
-    arr.forEach(a => { const s = statusForDate(a, dateISO); if (c[s] !== undefined) c[s]++; });
-    return c;
-  }
-
-  function renderAgentRow(agent) {
-    const status = statusForDate(agent, selectedDate);
-    const info = STATUSES[status] || STATUSES.off;
-    const override = state.overrides[selectedDate]?.[agent.id];
-    const dow = new Date(selectedDate + 'T00:00:00').getDay();
-    const baseStatus = agent.schedule[dow] || 'off';
-
-    const leave = leaveForDate(agent, selectedDate);
-    const accom = accomForDate(agent, selectedDate);
-    const hasCombo = leave === 'half_jiffy' && accom;
-
-    const isLeave = !!leave;
-    const isAccom = accom && ACCOM_TYPES.includes(accom);
-    const isExtra = accom === 'extra_hours_wfh';
-    const isDayOff = baseStatus === 'off' && !override && !leave;
-
-    const wkStart = startOfWeek(selectedDate);
-    const wkEnd = endOfWeek(selectedDate);
-    let weekAccomWFH = 0;
-    Object.keys(state.overrides).forEach(date => {
-      if (date < wkStart || date > wkEnd) return;
-      const o = state.overrides[date][agent.id];
-      if (o?.accomType === 'accom_wfh' || o?.type === 'accom_wfh') weekAccomWFH++;
-    });
-    const flexAtLimit = weekAccomWFH >= state.settings.flexLimitPerWeek;
-    const balance = balanceForAgent(agent.name);
-
-    const accomNote = (accom === 'accom_general') ? (override?.accomNote || override?.note || '') : '';
-
-    const curAccomType = accom || '';
-    const curLeaveType = leave || '';
-
-    const leaveInfo = leave ? (STATUSES[leave] || STATUSES.off) : null;
-    const accomInfo = accom ? (STATUSES[accom] || null) : null;
-
-    // Build status pills HTML (no nested template literals)
-    let statusPillsHtml;
-    if (hasCombo && leaveInfo && accomInfo) {
-      statusPillsHtml = '<span class="status-pill ' + leaveInfo.class + '" style="font-size:10px">' + leaveInfo.label + '</span>'
-        + '<span class="status-pill ' + accomInfo.class + '" style="font-size:10px">+' + accomInfo.short + '</span>';
-    } else {
-      statusPillsHtml = '<span class="status-pill ' + info.class + '">' + info.label + '</span>';
-    }
-
-    const hasOverride = override && Object.keys(override).some(k => k !== 'ts' && override[k]);
-    const overrideTagHtml = hasOverride ? '<span class="override-tag">Override</span>' : (leave && !override ? '<span class="override-tag">Leave</span>' : '');
-
-    const accomNoteHtml = accomNote ? ' &middot; <em style="color:var(--warn)">' + escapeHtml(accomNote) + '</em>' : '';
-    const extraBtnDisabled = (balance < 1 && curAccomType !== 'extra_hours_wfh') ? 'disabled title="No credits"' : '';
-    const clearLeaveBtnHtml = curLeaveType ? '<button class="reset-btn" data-clear-leave="' + agent.id + '" title="Clear HR leave" style="padding:3px 6px;font-size:11px">&#x2715;</button>' : '';
-    const resetAllHtml = (accom || leave) ? '<button class="reset-btn" data-reset="' + agent.id + '" title="Clear all overrides">&#x21BA; All</button>' : '';
-
-    const leaveSelectStyle = curLeaveType
-      ? 'padding:4px 6px;font-size:11px;border-radius:5px;border:1px solid var(--border);background:#fff7ed;color:#9a3412;font-weight:700;height:28px;'
-      : 'padding:4px 6px;font-size:11px;border-radius:5px;border:1px solid var(--border);background:white;color:var(--muted);height:28px;';
-
-    const row = document.createElement('div');
-    row.className = 'agent-row'
-      + (isLeave && !hasCombo ? ' is-leave' : '')
-      + (hasCombo ? ' is-leave' : '')
-      + (isAccom ? ' is-accom' : '')
-      + (isExtra ? ' is-extra' : '')
-      + (isDayOff ? ' is-off' : '');
-
-    row.innerHTML =
-      '<div class="agent-info">' +
-        '<div class="name">' +
-          escapeHtml(agent.name) +
-          '<span class="counter-chip ' + (flexAtLimit ? 'warn' : '') + '" title="Accom WFH used this week (cap: ' + state.settings.flexLimitPerWeek + ')">A:' + weekAccomWFH + '/' + state.settings.flexLimitPerWeek + '</span>' +
-          '<span class="counter-chip bank" title="Extra Hrs credit balance">&#x1F381; ' + formatBalance(balance) + '</span>' +
-        '</div>' +
-        '<div class="sub">' + escapeHtml(agent.supervisor || '') + (agent.supervisor && agent.team ? ' &middot; ' : '') + escapeHtml(agent.team || '') + accomNoteHtml + '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">' + statusPillsHtml + '</div>' +
-      '<div>' + overrideTagHtml + '</div>' +
-      '<div class="status-buttons">' +
-        '<button class="status-btn lastmin-btn" data-lastmin="' + agent.id + '" title="Log a last-minute accommodation">&#x26A1; Last-Min</button>' +
-        '<button class="status-btn accom_wfh ' + (curAccomType === 'accom_wfh' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_wfh">WFH</button>' +
-        '<button class="status-btn accom_early ' + (curAccomType === 'accom_early' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_early">Early</button>' +
-        '<button class="status-btn accom_late ' + (curAccomType === 'accom_late' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_late">Late</button>' +
-        '<button class="status-btn accom_general ' + (curAccomType === 'accom_general' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_general" title="General — doctor appt, makeup time, etc.">General</button>' +
-        '<button class="status-btn extra_hours_wfh ' + (curAccomType === 'extra_hours_wfh' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="extra_hours_wfh" ' + extraBtnDisabled + '>&#x1F381; Extra</button>' +
-        '<span class="leave-dropdown-wrap" style="display:inline-flex;align-items:center;gap:3px;">' +
-          '<select class="leave-select" data-agent="' + agent.id + '" style="' + leaveSelectStyle + '">' +
-            '<option value="">HR leave…</option>' +
-            '<option value="pto"' + (curLeaveType === 'pto' ? ' selected' : '') + '>PTO</option>' +
-            '<option value="jiffy_day"' + (curLeaveType === 'jiffy_day' ? ' selected' : '') + '>Jiffy Day</option>' +
-            '<option value="half_jiffy"' + (curLeaveType === 'half_jiffy' ? ' selected' : '') + '>Half Jiffy</option>' +
-            '<option value="unpaid"' + (curLeaveType === 'unpaid' ? ' selected' : '') + '>Unpaid</option>' +
-          '</select>' +
-          clearLeaveBtnHtml +
-        '</span>' +
-        resetAllHtml +
-      '</div>';
-
-    // ---- Accommodation buttons ----
-    row.querySelectorAll('[data-accom]:not(:disabled)').forEach(b => {
-      b.addEventListener('click', () => {
-        const newAccom = b.dataset.accom;
-        const curAccom = accomForDate(agent, selectedDate);
-        if (newAccom === 'accom_general') {
-          if (curAccom === 'accom_general') { clearAccomOverride(agent.id); return; }
-          pendingAccomGeneralAgentId = agent.id;
-          const o = state.overrides[selectedDate]?.[agent.id];
-          document.getElementById('accomNoteInput').value = o?.accomNote || o?.note || '';
-          document.getElementById('accomNoteModal').classList.add('show');
-          return;
-        }
-        if (newAccom === 'extra_hours_wfh') {
-          const wasExtra = curAccom === 'extra_hours_wfh';
-          if (!wasExtra && balance < 1) { alert(agent.name + ' has no Extra Hours credits.'); return; }
-          if (!wasExtra) addLocalLedgerEntry(agent.name, 'redeem', { credits:1, note:'Manual override redemption' });
-        }
-        if (curAccom === newAccom) {
-          clearAccomOverride(agent.id);
-        } else {
-          if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-          const o = state.overrides[selectedDate][agent.id] || {};
-          state.overrides[selectedDate][agent.id] = { ...o, accomType: newAccom, ts: new Date().toISOString() };
-          if (ACCOM_TYPES.includes(newAccom)) {
-            state.submissions.push({
-              id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
-              request_type: newAccom, request_date: selectedDate,
-              created_at: new Date().toISOString(), status: 'approved', submitted_by: 'supervisor'
-            });
-          }
-          saveState(); render();
-        }
-      });
-    });
-
-    // ---- HR leave dropdown ----
-    row.querySelectorAll('.leave-select').forEach(sel => {
-      sel.addEventListener('change', () => {
-        const newLeave = sel.value;
-        if (!newLeave) { clearLeaveOverride(agent.id); return; }
-        state.manualLeaves = state.manualLeaves.filter(l =>
-          !(l.agent_name === agent.name && l.start_date === selectedDate && l.end_date === selectedDate)
-        );
-        if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-        const o = state.overrides[selectedDate][agent.id] || {};
-        state.overrides[selectedDate][agent.id] = { ...o, leaveType: newLeave, ts: new Date().toISOString() };
-        saveState(); render();
-      });
-    });
-
-    row.querySelectorAll('[data-clear-leave]').forEach(b => b.addEventListener('click', () => clearLeaveOverride(agent.id)));
-    row.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => clearOverride(agent.id)));
-    row.querySelectorAll('[data-lastmin]').forEach(b => b.addEventListener('click', () => markLastMinute(agent.id)));
-    return row;
-  }
-
-  // ---- General accommodation note modal wiring ----
-  document.getElementById('accomNoteConfirm').addEventListener('click', () => {
-    const note = document.getElementById('accomNoteInput').value.trim();
-    if (!note) { alert('Please enter a brief note (required for general accommodations).'); return; }
-    if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-    const agent = state.agents.find(a => a.id === pendingAccomGeneralAgentId);
-    const existingO = state.overrides[selectedDate][pendingAccomGeneralAgentId] || {};
-    state.overrides[selectedDate][pendingAccomGeneralAgentId] = {
-      ...existingO, accomType: 'accom_general', accomNote: note, source: 'manual', ts: new Date().toISOString()
-    };
-    if (agent) {
-      state.submissions.push({
-        id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
-        request_type: 'accom_general', request_date: selectedDate,
-        created_at: new Date().toISOString(), status: 'approved',
-        submitted_by: 'supervisor', reason: note
-      });
-    }
-    saveState();
-    document.getElementById('accomNoteModal').classList.remove('show');
-    pendingAccomGeneralAgentId = null;
-    render();
-  });
-  document.getElementById('accomNoteCancel').addEventListener('click', () => {
-    document.getElementById('accomNoteModal').classList.remove('show');
-    pendingAccomGeneralAgentId = null;
+  // Populate agent dropdown
+  const agentSel = document.getElementById('agent');
+  AGENTS.sort((a,b)=>a.name.localeCompare(b.name)).forEach(a=>{
+    const opt=document.createElement('option');
+    opt.value=a.name; opt.textContent=a.name; agentSel.appendChild(opt);
   });
 
-  function markLastMinute(agentId) {
-    const agent = state.agents.find(a => a.id === agentId);
-    if (!agent) return;
-    const choice = prompt(
-      `Last-minute accommodation for ${agent.name} on ${selectedDate}.\n\n` +
-      `Pick a type:\n  W = Accom WFH\n  E = Came in early\n  L = Stayed late\n  O = Office day swap\n  G = General (doctor appt, makeup time, etc.)\n\nEnter W, E, L, O, or G:`, 'W'
-    );
-    if (!choice) return;
-    const typeMap = { W:'accom_wfh', E:'accom_early', L:'accom_late', O:'accom_office_change', G:'accom_general' };
-    const status = typeMap[choice.trim().toUpperCase()];
-    if (!status) { alert('Invalid type.'); return; }
-    const reason = prompt('Optional note (visible in audit trail):', '') || '';
-    if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-    state.overrides[selectedDate][agentId] = { type: status, source: 'manual', note: reason, ts: new Date().toISOString() };
-    state.submissions.push({
-      id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
-      request_type: status, request_date: selectedDate,
-      created_at: new Date().toISOString(), status: 'approved',
-      submitted_by: 'supervisor', reason, manualLastMinute: true
+  let currentBalance=0, weeklyAccomWfhUsed=0, pendingOrApprovedThisWeek=[];
+
+  const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+  document.getElementById('date').value=todayISO();
+
+  const saved=localStorage.getItem('reqAgent');
+  if(saved){agentSel.value=saved;refreshContext(saved);loadHistory(saved);}
+
+  agentSel.addEventListener('change',()=>{
+    localStorage.setItem('reqAgent',agentSel.value);
+    refreshContext(agentSel.value); loadHistory(agentSel.value); updateRuleStatus();
+  });
+  document.getElementById('date').addEventListener('change',updateRuleStatus);
+
+  // Top pills
+  let topType='', accomSubType='';
+  document.querySelectorAll('#topPills .pill').forEach(p=>p.addEventListener('click',()=>{
+    document.querySelectorAll('#topPills .pill').forEach(x=>x.classList.remove('active','accom','ot_claim','extra_hours_wfh'));
+    p.classList.add('active',p.dataset.top); topType=p.dataset.top; accomSubType='';
+    document.querySelectorAll('#accomPills .sub-pill').forEach(x=>x.classList.remove('active','accom_wfh','accom_early','accom_late','accom_office_change','accom_general'));
+    document.getElementById('accomDetail').classList.toggle('show',topType==='accom');
+    document.getElementById('otDetail').classList.toggle('show',topType==='ot_claim');
+    document.getElementById('reasonField').style.display=topType==='ot_claim'?'none':'block';
+    document.getElementById('coverageField').style.display=topType==='ot_claim'?'none':'block';
+    document.getElementById('generalTip').style.display='none';
+    document.getElementById('reasonLabel').textContent='Reason';
+    updateRuleStatus();
+  }));
+
+  document.querySelectorAll('#accomPills .sub-pill').forEach(p=>p.addEventListener('click',()=>{
+    document.querySelectorAll('#accomPills .sub-pill').forEach(x=>x.classList.remove('active','accom_wfh','accom_early','accom_late','accom_office_change','accom_general'));
+    p.classList.add('active',p.dataset.sub); accomSubType=p.dataset.sub;
+    const isGeneral=accomSubType==='accom_general';
+    document.getElementById('generalTip').style.display=isGeneral?'block':'none';
+    document.getElementById('reasonLabel').textContent=isGeneral?'Describe what you need (required)':'Reason';
+    updateRuleStatus();
+  }));
+
+  // OT hours calc
+  function recalcOtHours(){
+    const s=document.getElementById('otStart').value;
+    const e=document.getElementById('otEnd').value;
+    if(!s||!e){document.getElementById('otCalcHours').textContent='—';return null;}
+    const[sh,sm]=s.split(':').map(Number); const[eh,em]=e.split(':').map(Number);
+    let mins=(eh*60+em)-(sh*60+sm); if(mins<0) mins+=24*60;
+    const hrs=mins/60;
+    document.getElementById('otCalcHours').textContent=hrs.toFixed(2);
+    return hrs;
+  }
+  document.getElementById('otStart').addEventListener('change',recalcOtHours);
+  document.getElementById('otEnd').addEventListener('change',recalcOtHours);
+
+  async function refreshContext(name){
+    if(!name||!supabase) return;
+    const{data:ledger}=await supabase.from('extra_hours_ledger').select('*').eq('agent_name',name);
+    let bal=0;
+    (ledger||[]).forEach(e=>{
+      const credits=Number(e.credits)||0; const hours=Number(e.hours)||0;
+      if(e.entry_type==='earn') bal+=credits>0?credits:hours/HOURS_PER_CREDIT;
+      else if(e.entry_type==='redeem') bal-=credits>0?credits:1;
+      else if(e.entry_type==='adjustment') bal+=credits;
     });
-    saveState(); render();
+    currentBalance=Math.max(0,isNaN(bal)?0:bal);
+    const banner=document.getElementById('balanceBanner');
+    if(currentBalance>0){
+      banner.innerHTML=`<strong>🎁 You have ${currentBalance.toFixed(1).replace(/\.0$/,'')} Extra Hrs WFH credit${currentBalance===1?'':'s'}</strong> — pick "Use Extra Hrs WFH" to redeem one.`;
+      banner.classList.add('show');
+    } else banner.classList.remove('show');
   }
 
-  function setManualOverride(agentId, status) {
-    const agent = state.agents.find(a => a.id === agentId);
-    if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-    const o = state.overrides[selectedDate][agentId] || {};
-    if (LEAVE_TYPES.includes(status)) {
-      state.overrides[selectedDate][agentId] = { ...o, leaveType: status, ts: new Date().toISOString() };
-    } else {
-      // accom or extra_hours_wfh
-      if (status === 'extra_hours_wfh') {
-        const balance = balanceForAgent(agent.name);
-        const wasExtra = accomForDate(agent, selectedDate) === 'extra_hours_wfh';
-        if (!wasExtra && balance < 1) { alert(`${agent.name} has no Extra Hours credits.`); return; }
-        if (!wasExtra) addLocalLedgerEntry(agent.name, 'redeem', { credits:1, note:'Manual override redemption' });
+  async function refreshWeeklyAccom(name,dateISO){
+    if(!name||!supabase){weeklyAccomWfhUsed=0;pendingOrApprovedThisWeek=[];return;}
+    const d=new Date(dateISO+'T00:00:00');
+    const weekStart=new Date(d); weekStart.setDate(d.getDate()-d.getDay());
+    const weekEnd=new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+    const ws=`${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`;
+    const we=`${weekEnd.getFullYear()}-${String(weekEnd.getMonth()+1).padStart(2,'0')}-${String(weekEnd.getDate()).padStart(2,'0')}`;
+    const{data}=await supabase.from('requests').select('*')
+      .eq('agent_name',name).eq('request_type','accom_wfh')
+      .gte('request_date',ws).lte('request_date',we).in('status',['pending','approved']);
+    pendingOrApprovedThisWeek=data||[];
+    weeklyAccomWfhUsed=pendingOrApprovedThisWeek.length;
+  }
+
+  async function updateRuleStatus(){
+    const banner=document.getElementById('ruleStatus');
+    const submitBtn=document.getElementById('submitBtn');
+    submitBtn.classList.remove('warning'); submitBtn.disabled=!configured;
+    submitBtn.textContent='Review & submit';
+    banner.classList.remove('show','ok','warn','danger','bank'); banner.innerHTML='';
+    const date=document.getElementById('date').value;
+    if(!agentSel.value||!topType||!date) return;
+    if(topType==='accom'&&accomSubType==='accom_wfh'){
+      await refreshWeeklyAccom(agentSel.value,date);
+      banner.classList.add('show');
+      if(weeklyAccomWfhUsed===0){
+        banner.classList.add('ok');
+        banner.innerHTML=`<strong>✓ Within your weekly limit.</strong> You have 0 of ${ACCOM_WFH_WEEKLY_CAP} Accommodation WFH used this week.`;
+      } else if(weeklyAccomWfhUsed>=ACCOM_WFH_WEEKLY_CAP){
+        banner.classList.add('danger');
+        banner.innerHTML=`<strong>⚠ Over your weekly limit.</strong> You already have ${weeklyAccomWfhUsed} Accommodation WFH this week (cap: ${ACCOM_WFH_WEEKLY_CAP}). <strong>This will be flagged as an exception request.</strong> Your supervisor will decide.`;
+        submitBtn.classList.add('warning'); submitBtn.textContent='Submit as exception request';
       }
-      const prevAccom = accomForDate(agent, selectedDate);
-      state.overrides[selectedDate][agentId] = { ...o, accomType: status, source: 'manual', ts: new Date().toISOString() };
-      if (ACCOM_TYPES.includes(status) && prevAccom !== status) {
-        state.submissions.push({
-          id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
-          request_type: status, request_date: selectedDate,
-          created_at: new Date().toISOString(), status: 'approved', submitted_by: 'supervisor'
-        });
+    } else if(topType==='extra_hours_wfh'){
+      banner.classList.add('show');
+      if(currentBalance>=1){
+        banner.classList.add('bank');
+        banner.innerHTML=`<strong>🎁 You have ${currentBalance.toFixed(1).replace(/\.0$/,'')} credit${currentBalance===1?'':'s'}.</strong> Approving this deducts 1.`;
+      } else {
+        banner.classList.add('danger');
+        banner.innerHTML=`<strong>✗ No credits available.</strong> Earn credits by submitting OT claims (1 credit per ${HOURS_PER_CREDIT} approved hours).`;
+        submitBtn.disabled=true; submitBtn.textContent='Cannot submit — no credits';
       }
-    }
-    saveState(); render();
-  }
-
-  function clearOverride(agentId) {
-    if (state.overrides[selectedDate]) {
-      delete state.overrides[selectedDate][agentId];
-      if (Object.keys(state.overrides[selectedDate]).length === 0) delete state.overrides[selectedDate];
-    }
-    saveState(); render();
-  }
-
-  function clearAccomOverride(agentId) {
-    const o = state.overrides[selectedDate]?.[agentId];
-    if (!o) return;
-    delete o.accomType; delete o.accomNote;
-    // Also clear legacy type if it was an accom type
-    if (o.type && (ACCOM_TYPES.includes(o.type) || o.type === 'extra_hours_wfh')) delete o.type;
-    // If nothing left, remove the override entirely
-    if (!o.leaveType && !o.type && !o.accomType) {
-      delete state.overrides[selectedDate][agentId];
-      if (Object.keys(state.overrides[selectedDate]).length === 0) delete state.overrides[selectedDate];
-    }
-    saveState(); render();
-  }
-
-  function clearLeaveOverride(agentId) {
-    const o = state.overrides[selectedDate]?.[agentId];
-    if (!o) return;
-    delete o.leaveType;
-    // Also clear legacy type if it was a leave type
-    if (o.type && LEAVE_TYPES.includes(o.type)) delete o.type;
-    if (!o.leaveType && !o.type && !o.accomType) {
-      delete state.overrides[selectedDate][agentId];
-      if (Object.keys(state.overrides[selectedDate]).length === 0) delete state.overrides[selectedDate];
-    }
-    saveState(); render();
-  }
-
-  function clearAllOverridesForDay() {
-    if (!state.overrides[selectedDate]) { alert('No overrides on this day.'); return; }
-    if (!confirm('Clear all overrides for this day?')) return;
-    delete state.overrides[selectedDate];
-    saveState(); render();
-  }
-
-  // ---- Extra Hours balance ----
-  // FIX: Robust null-safe math — never produces NaN
-  function balanceForAgent(name) {
-    const today = todayISO();
-    const expired = today > state.settings.extraExpiry;
-    let bal = 0;
-    ledgerEntries.filter(e => e.agent_name === name).forEach(e => {
-      const credits = Number(e.credits) || 0;
-      const hours = Number(e.hours) || 0;
-      const hoursPerCredit = state.settings.hoursPerCredit || 4;
-      if (e.entry_type === 'earn') {
-        if (!expired) bal += credits > 0 ? credits : hours / hoursPerCredit;
-      } else if (e.entry_type === 'redeem') {
-        bal -= credits > 0 ? credits : 1;
-      } else if (e.entry_type === 'adjustment') {
-        bal += credits;
+    } else if(topType==='ot_claim'){
+      const ageDays=Math.floor((new Date(todayISO())-new Date(date))/86400000);
+      banner.classList.add('show');
+      if(ageDays<0){
+        banner.classList.add('warn');
+        banner.innerHTML=`<strong>⚠ Future date.</strong> Pick a date you actually worked.`;
+        submitBtn.disabled=true;
+      } else {
+        banner.classList.add('ok');
+        banner.innerHTML=`<strong>✓ OT claim.</strong> ${ageDays===0?'Submitted same-day.':ageDays+' day'+(ageDays===1?'':'s')+' after the date worked.'} No submission deadline.`;
       }
-    });
-    // Also count local ledger entries (for offline/no-Supabase use)
-    (state.localLedger || []).filter(e => e.agent_name === name).forEach(e => {
-      if (e.entry_type === 'earn') {
-        if (!expired) bal += Number(e.credits) || 0;
-      } else if (e.entry_type === 'redeem') {
-        bal -= Number(e.credits) || 1;
-      } else if (e.entry_type === 'adjustment') {
-        bal += Number(e.credits) || 0;
-      }
-    });
-    return Math.max(0, isNaN(bal) ? 0 : bal);
-  }
-
-  // Local ledger for offline use
-  function addLocalLedgerEntry(agentName, entryType, opts={}) {
-    if (!state.localLedger) state.localLedger = [];
-    state.localLedger.push({
-      id: uid(), agent_name: agentName, entry_type: entryType,
-      hours: opts.hours || null, credits: opts.credits || null,
-      date_worked: opts.dateWorked || null, note: opts.note || null,
-      created_at: new Date().toISOString()
-    });
-    saveState();
-  }
-
-  async function addLedgerEntry(agentName, entryType, opts={}) {
-    if (supabase && supabaseConnected) {
-      const { error, data } = await supabase.from('extra_hours_ledger').insert({
-        agent_name: agentName, entry_type: entryType,
-        hours: opts.hours || null,
-        credits: opts.credits != null ? opts.credits : (entryType === 'redeem' ? 1 : null),
-        date_worked: opts.dateWorked || null,
-        source_request_id: opts.requestId || null,
-        approved_by: opts.approvedBy || 'supervisor',
-        note: opts.note || null,
-      }).select();
-      if (!error && data) ledgerEntries.unshift(...data);
-    } else {
-      addLocalLedgerEntry(agentName, entryType, opts);
+    } else if(topType==='accom'&&accomSubType){
+      banner.classList.add('show','ok');
+      banner.innerHTML=`<strong>${TYPE_LABEL[accomSubType]||'Accommodation'}</strong> — your supervisor will review.`;
     }
   }
 
-  // ============== PENDING REQUESTS ==============
-  function renderPending() {
-    populateSelect('pendingSupervisor', pendingSupervisorFilter);
-    document.getElementById('pendingSupervisor').value = pendingSupervisorFilter || '';
-    const list = document.getElementById('pendingList');
-    const history = document.getElementById('pendingHistory');
-    let visible = pendingRequests.filter(r =>
-      pendingFilter === 'pending' ? r.status === 'pending' : true);
-    if (pendingSupervisorFilter) visible = visible.filter(r => r.agent_supervisor === pendingSupervisorFilter);
-    const pending = visible.filter(r => r.status === 'pending');
-    const decided = visible.filter(r => ['approved','denied','cancelled'].includes(r.status));
-
-    if (!supabaseConnected) {
-      list.innerHTML = `<div class="empty">Connect Supabase to see agent-submitted requests here. Supervisor-marked accommodations are tracked locally and appear in Accommodation Usage → Submission tracking.</div>`;
-    } else if (pending.length === 0) {
-      list.innerHTML = `<div class="empty">No pending requests — you're caught up.</div>`;
-    } else {
-      list.innerHTML = pending.map(r => renderRequestCard(r, true)).join('');
-      list.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', () => approveRequest(b.dataset.approve)));
-      list.querySelectorAll('[data-deny]').forEach(b => b.addEventListener('click', () => denyRequest(b.dataset.deny)));
-    }
-    if (pendingFilter === 'all' && decided.length) {
-      history.innerHTML = `<h3>Recent decisions</h3>` + decided.slice(-30).reverse().map(r => renderRequestCard(r, false)).join('');
-    } else history.innerHTML = '';
-  }
-
-  function renderRequestCard(r, withActions) {
-    const agent = state.agents.find(a => a.name === r.agent_name);
-    const typeLabel = STATUSES[r.request_type]?.label || (r.request_type||'').replace(/_/g, ' ');
-    const dateStr = new Date(r.request_date + 'T00:00:00').toLocaleDateString(undefined,
-      { weekday:'short', month:'short', day:'numeric' });
-    const submittedAgo = timeAgo(r.created_at);
-    const lastMin = isLastMinuteRequest(r) && ACCOM_TYPES.includes(r.request_type);
-    let warnings = '';
-    if (withActions && agent) {
-      if (r.request_type === 'accom_wfh') {
-        const [s, e] = [startOfWeek(r.request_date), endOfWeek(r.request_date)];
-        let used = 0;
-        Object.keys(state.overrides).forEach(d => {
-          if (d >= s && d <= e && state.overrides[d][agent.id]?.type === 'accom_wfh') used++;
-        });
-        if (used >= state.settings.flexLimitPerWeek)
-          warnings += `<div class="req-warn">Per-agent weekly cap reached (${state.settings.flexLimitPerWeek}/wk). You can still approve — no supervisor cap.</div>`;
-      }
-      if (r.request_type === 'extra_hours_wfh') {
-        const balance = balanceForAgent(agent.name);
-        if (balance < 1) warnings += `<div class="req-warn danger">No Extra Hours credits available (balance: ${formatBalance(balance)}).</div>`;
-        else warnings += `<div class="req-warn ok">${formatBalance(balance)} credit(s) available — approval deducts 1.</div>`;
-      }
-      if (r.request_type === 'ot_claim') {
-        const ageDays = (new Date(todayISO()) - new Date(r.request_date)) / 86400000;
-        if (ageDays > state.settings.otCutoffDays)
-          warnings += `<div class="req-warn">Claim is ${Math.round(ageDays)} days after date worked (cutoff: ${state.settings.otCutoffDays} days).</div>`;
-        const leave = getManualLeaves().find(l =>
-          l.agent_name === r.agent_name && r.request_date >= l.start_date && r.request_date <= l.end_date);
-        if (leave) warnings += `<div class="req-warn danger">This date overlaps logged ${leave.leave_type.toUpperCase()} leave.</div>`;
-      }
-      // FIX: show clear note for general accommodation
-      if (r.request_type === 'accom_general' && r.reason)
-        warnings += `<div class="req-warn ok">General accommodation note: ${escapeHtml(r.reason)}</div>`;
-      if (lastMin) warnings += `<div class="req-warn">Last-minute submission (within 24h of requested date).</div>`;
-    }
-    const statusBadge = r.status === 'approved' ? `<span class="pill ok">Approved</span>` :
-                       r.status === 'denied' ? `<span class="pill danger">Denied</span>` :
-                       r.status === 'cancelled' ? `<span class="pill" style="background:#f3f4f6;color:#6b7280">Cancelled</span>` : '';
-    let detailLines = '';
-    if (r.request_type === 'ot_claim') {
-      detailLines = `
-        <p style="margin:0 0 4px; font-size:13px;"><strong>OT:</strong> ${r.ot_start_time||'—'} to ${r.ot_end_time||'—'} (${r.ot_hours||'?'} hrs)</p>
-        ${r.ot_purpose ? `<p style="margin:0 0 4px; font-size:13px;">Purpose: ${escapeHtml(r.ot_purpose)}</p>` : ''}
-        ${r.ot_pre_authorizer ? `<p style="margin:0; font-size:12px; color:var(--muted)">Pre-authorized by: ${escapeHtml(r.ot_pre_authorizer)}</p>` : ''}`;
-    } else {
-      detailLines = `
-        ${r.reason ? `<p style="margin:0 0 4px; font-size:13px;">${escapeHtml(r.reason)}</p>` : ''}
-        ${r.coverage ? `<p style="margin:0; font-size:12px; color:var(--muted)">Coverage: ${escapeHtml(r.coverage)}</p>` : ''}`;
-    }
-    return `
-      <div class="request-card type-${r.request_type}">
-        <div class="req-row">
-          <div class="req-info">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <span class="req-name">${escapeHtml(r.agent_name)}</span>
-              <span class="req-meta">${escapeHtml(r.agent_supervisor||'')}${r.agent_team?' · '+escapeHtml(r.agent_team):''}</span>
-              ${statusBadge}
-              ${lastMin ? '<span class="last-minute-flag">Last-min</span>' : ''}
-            </div>
-            <div class="req-type-row">
-              <span class="req-pill ${r.request_type}">${typeLabel}</span>
-              <span style="font-size:13px">${dateStr}</span>
-              <span style="font-size:12px; color:var(--muted)">· ${submittedAgo}</span>
-            </div>
-            ${warnings}
-            ${detailLines}
-            ${r.decision_note ? `<p style="margin:6px 0 0; font-size:12px; color:var(--muted)"><em>Note: ${escapeHtml(r.decision_note)}</em></p>` : ''}
-          </div>
-          ${withActions ? `
-            <div class="req-actions">
-              <button class="btn-approve" data-approve="${r.id}">Approve</button>
-              <button class="btn-danger" data-deny="${r.id}">Deny</button>
-            </div>` : ''}
-        </div>
-      </div>`;
-  }
-
-  function timeAgo(iso) {
-    if (!iso) return '';
-    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-    return `${Math.floor(diff/86400)}d ago`;
-  }
-
-  async function approveRequest(id) {
-    const req = pendingRequests.find(r => r.id === id); if (!req) return;
-    const agent = state.agents.find(a => a.name === req.agent_name);
-    if (!agent) { alert(`Agent "${req.agent_name}" not in roster. Add via Static Schedule.`); return; }
-    if (req.request_type === 'ot_claim') {
-      const credits = (Number(req.ot_hours)||0) / (state.settings.hoursPerCredit||4);
-      await addLedgerEntry(req.agent_name, 'earn', {
-        hours: req.ot_hours, credits, dateWorked: req.request_date, requestId: req.id, note: req.ot_purpose||''
-      });
-    } else if (req.request_type === 'extra_hours_wfh') {
-      const balance = balanceForAgent(agent.name);
-      if (balance < 1) { alert('No Extra Hours credits available.'); return; }
-      await addLedgerEntry(req.agent_name, 'redeem', {
-        credits:1, dateWorked: req.request_date, requestId: req.id, note:'Redeemed via approved request'
-      });
-      if (!state.overrides[req.request_date]) state.overrides[req.request_date] = {};
-      const existO2 = state.overrides[req.request_date][agent.id] || {};
-      state.overrides[req.request_date][agent.id] = { ...existO2, accomType:'extra_hours_wfh', source:'request', requestId:req.id };
-      saveState();
-    } else {
-      if (!state.overrides[req.request_date]) state.overrides[req.request_date] = {};
-      const existOvr = state.overrides[req.request_date][agent.id] || {};
-      state.overrides[req.request_date][agent.id] = {
-        ...existOvr, accomType: req.request_type, source:'request', requestId:req.id,
-        accomNote: req.reason || null
-      };
-      saveState();
-    }
-    if (supabase && supabaseConnected) {
-      const { error } = await supabase.from('requests').update({
-        status:'approved', decided_by:'supervisor', decided_at: new Date().toISOString()
-      }).eq('id', id);
-      if (error) alert('Approved locally but Supabase update failed: ' + error.message);
-    }
-    await fetchAllSupabase();
-  }
-
-  async function denyRequest(id) {
-    const note = prompt('Optional reason (visible to agent):', '') || '';
-    if (!supabase || !supabaseConnected) return;
-    const { error } = await supabase.from('requests').update({
-      status:'denied', decided_by:'supervisor', decided_at: new Date().toISOString(), decision_note: note||null
-    }).eq('id', id);
-    if (error) { alert('Could not deny: ' + error.message); return; }
-    await fetchAllSupabase();
-  }
-
-  // ============== BULK LEAVE ENTRY ==============
-  // FIX: All leave operations now fully local — no Supabase required
-  function renderLeave() {
-    const sel = document.getElementById('leaveAgent');
-    sel.innerHTML = state.agents.slice().sort((a,b) => a.name.localeCompare(b.name))
-      .map(a => `<option value="${escapeAttr(a.name)}">${escapeHtml(a.name)} — ${escapeHtml(a.supervisor||'')}</option>`).join('');
-    document.getElementById('leaveStart').value = todayISO();
-    document.getElementById('leaveEnd').value = todayISO();
-    renderLeaveList();
-  }
-
-  function renderLeaveList() {
-    const list = document.getElementById('leaveList');
-    let entries = getManualLeaves().slice();
-    if (leaveListFilter === 'upcoming') entries = entries.filter(e => e.end_date >= todayISO());
-    if (leaveTypeFilter) entries = entries.filter(e => e.leave_type === leaveTypeFilter);
-    entries.sort((a,b) => a.start_date.localeCompare(b.start_date));
-    if (entries.length === 0) {
-      list.innerHTML = '<div class="empty">No leave entries match the filter.</div>'; return;
-    }
-    list.innerHTML = entries.map(e => `
-      <div class="leave-list-item">
-        <div>
-          <div><strong>${escapeHtml(e.agent_name)}</strong> · <span class="status-pill ${e.leave_type}" style="display:inline-flex; padding:2px 8px; font-size:10px">${STATUSES[e.leave_type]?.label||e.leave_type}</span></div>
-          <div style="font-size:12px; color:var(--muted)">${e.start_date} → ${e.end_date}${e.note?' · '+escapeHtml(e.note):''}</div>
-        </div>
-        <button class="btn-danger" data-del-leave="${e.id}">Delete</button>
-      </div>`).join('');
-    list.querySelectorAll('[data-del-leave]').forEach(b => b.addEventListener('click', () => deleteLeave(b.dataset.delLeave)));
-  }
-
-  function addLeave() {
-    const agent = document.getElementById('leaveAgent').value;
-    const type = document.getElementById('leaveType').value;
-    const start = document.getElementById('leaveStart').value;
-    const end = document.getElementById('leaveEnd').value;
-    const note = document.getElementById('leaveNote').value.trim();
-    if (!agent || !start || !end || start > end) { alert('Pick a valid agent and date range.'); return; }
-    if (!state.manualLeaves) state.manualLeaves = [];
-    // Remove any single-day overrides for this agent in this range so leave takes priority
-    const leaveEntry = { id: uid(), agent_name: agent, leave_type: type, start_date: start, end_date: end, note: note||null };
-    state.manualLeaves.push(leaveEntry);
-    document.getElementById('leaveNote').value = '';
-    saveState();
-    renderLeaveList();
-    // Re-render daily if we're on the daily tab
-    if (activeTab === 'daily') render();
-  }
-
-  function deleteLeave(id) {
-    if (!confirm('Delete this leave entry?')) return;
-    state.manualLeaves = state.manualLeaves.filter(l => l.id !== id);
-    saveState();
-    renderLeaveList();
-    if (activeTab === 'daily') render();
-  }
-
-  // ============== ACCOMMODATION USAGE ==============
-  function renderUsage() {
-    populateSelect('usageSupervisor', usageSupervisor);
-    if (!usageFrom) usageFrom = addDays(todayISO(), -29);
-    if (!usageTo) usageTo = todayISO();
-    document.getElementById('usageFrom').value = usageFrom;
-    document.getElementById('usageTo').value = usageTo;
-    const agents = state.agents.filter(a => !usageSupervisor || a.supervisor === usageSupervisor);
-    const rows = agents.map(a => {
-      const uses = countUsesInRange(a, usageFrom, usageTo);
-      const earned = ledgerEntries.filter(l => l.agent_name === a.name && l.entry_type === 'earn'
-        && l.date_worked >= usageFrom && l.date_worked <= usageTo)
-        .reduce((s,l) => s + (Number(l.hours)||0), 0);
-      const total = uses.accom_wfh + uses.accom_early + uses.accom_late + uses.accom_office_change + uses.accom_general;
-      return { id:a.id, name:a.name, supervisor:a.supervisor||'', team:a.team||'', ...uses, total, earned, balance: balanceForAgent(a.name) };
-    });
-    rows.sort((a,b) => b.total - a.total);
-    const top = rows.filter(r => r.total > 0).slice(0,30);
-    if (chartUsage) chartUsage.destroy();
-    if (top.length === 0) {
-      const el = document.getElementById('usageChart');
-      if (el) el.parentElement.innerHTML = '<div class="empty">No accommodations logged in this date range yet.</div>';
-    } else {
-      chartUsage = new Chart(document.getElementById('usageChart').getContext('2d'), {
-        type:'bar', data:{
-          labels: top.map(r => r.name),
-          datasets: [
-            { label:'WFH accommodation', data: top.map(r => r.accom_wfh), backgroundColor:'#f59e0b' },
-            { label:'Came in early', data: top.map(r => r.accom_early), backgroundColor:'#8b5cf6' },
-            { label:'Stayed late', data: top.map(r => r.accom_late), backgroundColor:'#ec4899' },
-            { label:'Office day swap', data: top.map(r => r.accom_office_change), backgroundColor:'#06b6d4' },
-            { label:'General', data: top.map(r => r.accom_general||0), backgroundColor:'#84cc16' },
-          ]
-        },
-        options:{ responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{position:'bottom', labels:{font:{size:11}}} },
-          scales:{ x:{ stacked:true, ticks:{font:{size:10}, maxRotation:60, minRotation:45} },
-                   y:{ stacked:true, beginAtZero:true, ticks:{precision:0} } } }
-      });
-    }
-    renderSubmissionTable();
-    const t = document.getElementById('usageTable');
-    t.innerHTML = `
-      <thead><tr>
-        <th colspan="7" style="text-align:center; padding-top:6px; padding-bottom:4px; background:#fff7ed; color:#9a3412">Accommodations (abuse-signal tracking)</th>
-        <th colspan="3" style="text-align:center; padding-top:6px; padding-bottom:4px; background:#f0fdfa; color:#0f766e">Earned-reward usage (FYI)</th>
-      </tr><tr>
-        <th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">General</th><th class="num">Total</th>
-        <th class="num">Extra Hrs used</th><th class="num">OT hrs earned</th><th class="num">Bank</th>
-      </tr></thead>
-      <tbody>
-        ${rows.length===0 ? '<tr><td colspan="10" class="empty">No data.</td></tr>' :
-          rows.map(r => {
-            const flag = r.total>=5?'danger':r.total>=3?'warn':'ok';
-            return `<tr>
-              <td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td>
-              <td>${escapeHtml(r.supervisor)}</td>
-              <td class="num">${r.accom_wfh||''}</td>
-              <td class="num">${r.accom_early||''}</td>
-              <td class="num">${r.accom_late||''}</td>
-              <td class="num">${r.accom_general||''}</td>
-              <td class="num"><span class="pill ${flag}">${r.total}</span></td>
-              <td class="num" style="color:var(--muted)">${r.extra_hours_wfh||''}</td>
-              <td class="num" style="color:var(--muted)">${r.earned||''}</td>
-              <td class="num" style="color:var(--muted)">${formatBalance(r.balance)}</td>
-            </tr>`;
-          }).join('')}
-      </tbody>`;
-  }
-
-  function renderSubmissionTable() {
-    const t = document.getElementById('submissionTable');
-    if (!t) return;
-    const fromAgents = pendingRequests
-      .filter(r => ACCOM_TYPES.includes(r.request_type))
-      .map(r => ({ ...r, submitted_by: r.submitted_by||'agent' }));
-    const fromSupervisors = (state.submissions||[]).filter(s => ACCOM_TYPES.includes(s.request_type));
-    const all = [...fromAgents, ...fromSupervisors]
-      .filter(r => (!usageSupervisor||r.agent_supervisor===usageSupervisor) && r.request_date>=usageFrom && r.request_date<=usageTo)
-      .sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
-    if (all.length===0) {
-      t.innerHTML = '<tbody><tr><td class="empty">No accommodation submissions in this date range. Supervisor-marked accommodations on Daily Status are auto-logged here.</td></tr></tbody>';
-      return;
-    }
-    t.innerHTML = `
-      <thead><tr><th>Agent</th><th>Supervisor</th><th>Type</th><th>Date</th><th>Submitted</th><th>By</th><th>Status</th><th>Note</th><th>Last-min?</th></tr></thead>
-      <tbody>${all.map(r => {
-        const lm = isLastMinuteRequest(r);
-        const statusCls = r.status==='approved'?'ok':r.status==='denied'?'danger':'warn';
-        const byLabel = r.submitted_by==='supervisor'?'Supervisor':'Agent';
-        return `<tr>
-          <td><strong>${escapeHtml(r.agent_name)}</strong></td>
-          <td>${escapeHtml(r.agent_supervisor||'')}</td>
-          <td>${escapeHtml(STATUSES[r.request_type]?.label||r.request_type)}</td>
-          <td>${escapeHtml(r.request_date||'')}</td>
-          <td style="font-size:12px; color:var(--muted)">${escapeHtml((r.created_at||'').slice(0,16).replace('T',' '))}</td>
-          <td style="font-size:12px">${byLabel}</td>
-          <td><span class="pill ${statusCls}">${escapeHtml(r.status||'pending')}</span></td>
-          <td style="font-size:12px; color:var(--muted)">${escapeHtml(r.reason||'')}</td>
-          <td>${lm?'<span class="last-minute-flag">Last-min</span>':'<span style="color:var(--muted)">—</span>'}</td>
-        </tr>`;
-      }).join('')}</tbody>`;
-  }
-
-  function countUsesInRange(agent, fromISO, toISO) {
-    const counts = { accom_wfh:0, accom_early:0, accom_late:0, accom_office_change:0, accom_general:0, extra_hours_wfh:0 };
-    Object.keys(state.overrides).forEach(date => {
-      if (date<fromISO||date>toISO) return;
-      const o = state.overrides[date][agent.id];
-      if (!o) return;
-      // support new accomType and legacy type field
-      const t = o.accomType || (ACCOM_TYPES.includes(o.type)||o.type==='extra_hours_wfh' ? o.type : null);
-      if (t && counts[t] !== undefined) counts[t]++;
-    });
-    return counts;
-  }
-
-  function exportUsageCSV() {
-    const rows = [['Agent','Supervisor','Team','Accom WFH','Accom Early','Accom Late','Office swap','General','Total','Extra Hrs used','OT Hrs earned','Bank Balance']];
-    state.agents.forEach(a => {
-      if (usageSupervisor && a.supervisor !== usageSupervisor) return;
-      const c = countUsesInRange(a, usageFrom, usageTo);
-      const earned = ledgerEntries.filter(l => l.agent_name===a.name && l.entry_type==='earn'
-        && l.date_worked>=usageFrom && l.date_worked<=usageTo).reduce((s,l)=>s+(Number(l.hours)||0),0);
-      const total = c.accom_wfh+c.accom_early+c.accom_late+c.accom_office_change+c.accom_general;
-      rows.push([a.name,a.supervisor||'',a.team||'',c.accom_wfh,c.accom_early,c.accom_late,c.accom_office_change,c.accom_general,total,c.extra_hours_wfh,earned,formatBalance(balanceForAgent(a.name))]);
-    });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
-    a.download = `accommodation-usage-${usageFrom}-to-${usageTo}.csv`;
-    a.click(); URL.revokeObjectURL(a.href);
-  }
-
-  // ============== EXTRA HOURS BANK ==============
-  function renderBank() {
-    populateSelect('bankSupervisor', bankSupervisor);
-    let agents = state.agents.slice();
-    if (bankSearch) agents = agents.filter(a => a.name.toLowerCase().includes(bankSearch.toLowerCase()));
-    if (bankSupervisor) agents = agents.filter(a => a.supervisor === bankSupervisor);
-    agents.sort((a,b) => balanceForAgent(b.name) - balanceForAgent(a.name) || a.name.localeCompare(b.name));
-    const expired = todayISO() > state.settings.extraExpiry;
-    const t = document.getElementById('bankTable');
-    t.innerHTML = `
-      <thead><tr><th>Agent</th><th>Supervisor</th><th class="num">Earned (hrs)</th>
-        <th class="num">Redeemed</th><th class="num">Balance</th><th>Expires</th><th></th></tr></thead>
-      <tbody>${agents.map(a => {
-        const ents = [...ledgerEntries, ...(state.localLedger||[])].filter(e => e.agent_name===a.name);
-        const earned = ents.filter(e => e.entry_type==='earn').reduce((s,e)=>s+(Number(e.hours)||0),0);
-        const redeemed = ents.filter(e => e.entry_type==='redeem').reduce((s,e)=>s+(Number(e.credits)||1),0);
-        const bal = balanceForAgent(a.name);
-        const flag = bal>=1?'bank':'ok';
-        return `<tr>
-          <td><strong>${escapeHtml(a.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(a.team||'')}</div></td>
-          <td>${escapeHtml(a.supervisor||'')}</td>
-          <td class="num">${earned||''}</td>
-          <td class="num">${redeemed||''}</td>
-          <td class="num"><span class="pill ${flag}">${formatBalance(bal)}</span></td>
-          <td style="font-size:12px; color:${expired?'var(--danger)':'var(--muted)'}">${state.settings.extraExpiry}${expired?' (EXPIRED)':''}</td>
-          <td><button class="btn-ghost" data-bank-log="${escapeAttr(a.name)}">View ledger</button></td>
-        </tr>`;
-      }).join('')}</tbody>`;
-    t.querySelectorAll('[data-bank-log]').forEach(b => b.addEventListener('click', () => openBankModal(b.dataset.bankLog)));
-  }
-
-  function openBankModal(name) {
-    document.getElementById('bankModalTitle').textContent = `${name} — Extra Hours Ledger`;
-    const log = [...ledgerEntries, ...(state.localLedger||[])]
-      .filter(e => e.agent_name===name).slice().sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
-    const earned = log.filter(e=>e.entry_type==='earn').reduce((s,e)=>s+(Number(e.hours)||0),0);
-    const redeemed = log.filter(e=>e.entry_type==='redeem').reduce((s,e)=>s+(Number(e.credits)||1),0);
-    const bal = balanceForAgent(name);
-    document.getElementById('bankModalBody').innerHTML = `
-      <div style="display:flex; gap:10px; margin-bottom:14px;">
-        <div class="stat extra" style="flex:1"><div class="label">Earned (hrs)</div><div class="value">${earned}</div></div>
-        <div class="stat extra" style="flex:1"><div class="label">Redeemed</div><div class="value">${redeemed}</div></div>
-        <div class="stat extra" style="flex:1"><div class="label">Balance</div><div class="value">${formatBalance(bal)}</div></div>
-      </div>
-      <div style="margin-bottom:10px; font-size:12px; color:var(--muted)">All credits expire <strong>${state.settings.extraExpiry}</strong>.</div>
-      <div style="margin-bottom:10px">
-        <button class="btn-primary" id="manualAdjustBtn">Manual adjustment</button>
-      </div>
-      <div>
-        ${log.length===0 ? '<div class="empty">No entries yet.</div>' :
-          log.map(e => {
-            const sign = e.entry_type==='earn'?'+':e.entry_type==='redeem'?'−':'±';
-            const amt = e.entry_type==='earn' ? `${Number(e.hours)||0} hrs` :
-                        e.entry_type==='redeem' ? `${Number(e.credits)||1} credit` : `${Number(e.credits)||0} credits`;
-            return `<div class="leave-list-item">
-              <div>
-                <div><strong>${sign} ${amt}</strong> · ${e.entry_type}</div>
-                <div style="font-size:12px;color:var(--muted)">${e.date_worked||(e.created_at||'').slice(0,10)}${e.note?' · '+escapeHtml(e.note):''}${e.approved_by?' · approved by '+escapeHtml(e.approved_by):''}</div>
-              </div>
-              ${e.id && supabaseConnected ? `<button class="btn-danger" data-del-ledger="${e.id}">Delete</button>` : ''}
-            </div>`;
-          }).join('')}
-      </div>`;
-    document.getElementById('manualAdjustBtn').addEventListener('click', () => promptManualAdjustment(name));
-    document.querySelectorAll('[data-del-ledger]').forEach(b => b.addEventListener('click', () => deleteLedgerEntry(b.dataset.delLedger, name)));
-    document.getElementById('bankModal').classList.add('show');
-  }
-
-  async function promptManualAdjustment(name) {
-    const credits = parseFloat(prompt('Adjustment in credits (positive to add, negative to remove):', '0'));
-    if (!credits || isNaN(credits)) return;
-    const note = prompt('Reason (required):', '') || '';
-    if (!note) { alert('Reason required.'); return; }
-    await addLedgerEntry(name, 'adjustment', { credits, note });
-    openBankModal(name); renderBank();
-  }
-
-  async function deleteLedgerEntry(id, name) {
-    if (!confirm('Delete this ledger entry? This will affect the balance.')) return;
-    if (supabase && supabaseConnected) {
-      await supabase.from('extra_hours_ledger').delete().eq('id', id);
-      await fetchAllSupabase();
-    } else {
-      state.localLedger = (state.localLedger||[]).filter(e => e.id !== id);
-      saveState();
-    }
-    openBankModal(name);
-  }
-
-  // ============== TRENDS ==============
-  function renderTrends() {
-    if (!trendFrom) trendFrom = addDays(todayISO(), -89);
-    if (!trendTo) trendTo = todayISO();
-    document.getElementById('trendFrom').value = trendFrom;
-    document.getElementById('trendTo').value = trendTo;
-    const days = [];
-    let d = trendFrom;
-    while (d <= trendTo) { days.push(d); d = addDays(d, 1); }
-    const leaveCounts = days.map(date => getManualLeaves().filter(l => date>=l.start_date && date<=l.end_date).length);
-    const userAccomTotals = state.agents.map(a => {
-      let total = 0;
-      Object.keys(state.overrides).forEach(date => {
-        if (date<trendFrom||date>trendTo) return;
-        const o = state.overrides[date][a.id];
-        if (o && ACCOM_TYPES.includes(o.type)) total++;
-      });
-      return { agent:a, total };
-    }).filter(r=>r.total>0).sort((a,b)=>b.total-a.total);
-    const top5 = userAccomTotals.slice(0,5);
-    const lineColors = ['#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444'];
-    const weekLabels = [];
-    for (let i=0; i<days.length; i+=7) weekLabels.push(`Wk ${days[i].slice(5)}`);
-    const top5Datasets = top5.map((r,i) => ({
-      label: r.agent.name,
-      data: days.map(date => {
-        const o = state.overrides[date]?.[r.agent.id];
-        return o && ACCOM_TYPES.includes(o.type) ? 1 : 0;
-      }).reduce((acc,val,idx) => {
-        if (idx%7===0) acc.push(0);
-        acc[acc.length-1]+=val; return acc;
-      }, []),
-      borderColor: lineColors[i], backgroundColor:'transparent', tension:0.2, fill:false
-    }));
-    if (chartTrendAccom) chartTrendAccom.destroy();
-    const accomEl = document.getElementById('trendAccomChart');
-    if (top5.length===0) {
-      accomEl.parentElement.innerHTML = '<div class="empty">No accommodations in this period.</div>';
-    } else {
-      chartTrendAccom = new Chart(accomEl.getContext('2d'), {
-        type:'line', data:{ labels:weekLabels, datasets:top5Datasets },
-        options:{ responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{position:'bottom',labels:{font:{size:11}}} },
-          scales:{ x:{ticks:{font:{size:10},maxTicksLimit:12}},
-                   y:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Accommodations/week'}} } }
-      });
-    }
-    if (chartTrendLeave) chartTrendLeave.destroy();
-    chartTrendLeave = new Chart(document.getElementById('trendLeaveChart').getContext('2d'), {
-      type:'line', data:{ labels:days, datasets:[{ label:'Leave days', data:leaveCounts,
-        borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.15)', fill:true, tension:0.2 }] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-        scales:{ x:{ticks:{font:{size:10},maxTicksLimit:10}}, y:{beginAtZero:true,ticks:{precision:0}} } }
-    });
-    const hours=[]; for(let h=6;h<=20;h++) hours.push(h);
-    const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const dowOrder=[1,2,3,4,5,6,0];
-    const covDatasets = dowOrder.map((dowIdx,i) => ({
-      label: dowNames[dowIdx],
-      data: hours.map(h => {
-        let ts=0, tw=0;
-        days.forEach(date => {
-          if (new Date(date+'T00:00:00').getDay()!==dowIdx) return;
-          state.agents.forEach(a => {
-            const sh=SHIFT_HOURS[a.team]; if(!sh) return;
-            if(h<Math.floor(sh.start)||h>=Math.ceil(sh.end)) return;
-            if((a.schedule[dowIdx]||'off')==='off') return;
-            ts++;
-            const s=statusForDate(a,date);
-            if(!LEAVE_TYPES.includes(s)) tw++;
-          });
-        });
-        return ts===0?null:Math.round(100*tw/ts);
-      }),
-      borderColor:['#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#a855f7'][i],
-      backgroundColor:'transparent', tension:0.2, fill:false
-    }));
-    if (chartTrendCoverage) chartTrendCoverage.destroy();
-    chartTrendCoverage = new Chart(document.getElementById('trendCoverageChart').getContext('2d'), {
-      type:'line', data:{ labels:hours.map(formatHour), datasets:covDatasets },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},
-        scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}} }
-    });
-    const accomUserDetails = state.agents.map(a => {
-      const counts={accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0};
-      Object.keys(state.overrides).forEach(date => {
-        if(date<trendFrom||date>trendTo) return;
-        const o=state.overrides[date][a.id];
-        if(o && counts[o.type]!==undefined) counts[o.type]++;
-      });
-      const total=counts.accom_wfh+counts.accom_early+counts.accom_late+counts.accom_office_change+counts.accom_general;
-      return { name:a.name, supervisor:a.supervisor||'', team:a.team||'', ...counts, total };
-    }).filter(r=>r.total>0).sort((a,b)=>b.total-a.total).slice(0,12);
-    document.getElementById('topUsersTable').innerHTML = `
-      <thead><tr><th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">Office</th><th class="num">General</th><th class="num">Total</th></tr></thead>
-      <tbody>${accomUserDetails.length===0?'<tr><td colspan="8" class="empty">None.</td></tr>':
-        accomUserDetails.map(r => {
-          const flag=r.total>=5?'danger':r.total>=3?'warn':'ok';
-          return `<tr><td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td>
-            <td>${escapeHtml(r.supervisor)}</td>
-            <td class="num">${r.accom_wfh||''}</td><td class="num">${r.accom_early||''}</td>
-            <td class="num">${r.accom_late||''}</td><td class="num">${r.accom_office_change||''}</td>
-            <td class="num">${r.accom_general||''}</td>
-            <td class="num"><span class="pill ${flag}">${r.total}</span></td></tr>`;
-        }).join('')}</tbody>`;
-    const supervisorMap = {};
-    state.agents.forEach(a => {
-      const sup = a.supervisor||'Unassigned';
-      if (!supervisorMap[sup]) supervisorMap[sup]={teamSize:0,accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0,total:0};
-      supervisorMap[sup].teamSize++;
-      Object.keys(state.overrides).forEach(date => {
-        if(date<trendFrom||date>trendTo) return;
-        const o=state.overrides[date][a.id];
-        if(o && ACCOM_TYPES.includes(o.type)) { supervisorMap[sup][o.type]++; supervisorMap[sup].total++; }
-      });
-    });
-    const supRows = Object.entries(supervisorMap).map(([name,c]) => ({
-      name, ...c, perAgent: c.teamSize===0?0:(c.total/c.teamSize).toFixed(1)
-    })).sort((a,b)=>b.total-a.total);
-    document.getElementById('supervisorBreakdownTable').innerHTML = `
-      <thead><tr><th>Supervisor</th><th class="num">Team</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">General</th><th class="num">Total</th><th class="num">Per agent</th></tr></thead>
-      <tbody>${supRows.map(r => `<tr><td><strong>${escapeHtml(r.name)}</strong></td>
-        <td class="num">${r.teamSize}</td>
-        <td class="num">${r.accom_wfh||''}</td><td class="num">${r.accom_early||''}</td>
-        <td class="num">${r.accom_late||''}</td><td class="num">${r.accom_general||''}</td>
-        <td class="num"><strong>${r.total}</strong></td><td class="num">${r.perAgent}</td></tr>`).join('')}</tbody>`;
-  }
-
-  // ============== SCHEDULE VIEW ==============
-  function buildDays(start, period) {
-    if (period==='day') return [start];
-    if (period==='week') {
-      const d=new Date(start+'T00:00:00'); d.setDate(d.getDate()-d.getDay());
-      const sunStart=isoFromDate(d);
-      return [0,1,2,3,4,5,6].map(i=>addDays(sunStart,i));
-    }
-    const [y,m]=start.split('-').map(Number);
-    const lastDay=new Date(y,m,0).getDate(); const days=[];
-    for(let dd=1;dd<=lastDay;dd++) days.push(`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);
-    return days;
-  }
-
-  function renderSchedule() {
-    document.getElementById('schedDate').value = schedStart;
-    populateSelect('schedSupervisor', schedSupervisor);
-    document.getElementById('schedSort').value = schedSort;
-    document.querySelectorAll('#periodToggle button').forEach(b =>
-      b.classList.toggle('active', b.dataset.period===schedPeriod));
-    const days = buildDays(schedStart, schedPeriod);
-    const today = todayISO();
-    let agents = state.agents.slice();
-    if (schedSearch) agents=agents.filter(a=>a.name.toLowerCase().includes(schedSearch.toLowerCase()));
-    if (schedSupervisor) agents=agents.filter(a=>a.supervisor===schedSupervisor);
-    if (schedSort==='name') agents.sort((a,b)=>a.name.localeCompare(b.name));
-    else if (schedSort==='supervisor') agents.sort((a,b)=>(a.supervisor||'').localeCompare(b.supervisor||'')||a.name.localeCompare(b.name));
-    else { const tr=t=>{ const i=TEAM_ORDER.indexOf(t); return i===-1?99:i; };
-      agents.sort((a,b)=>tr(a.team||'')-tr(b.team||'')||(a.team||'').localeCompare(b.team||'')||a.name.localeCompare(b.name)); }
-    const cards=days.map(date=>renderDayCard(date,agents,today)).join('');
-    document.getElementById('schedTable').innerHTML=`<div class="sched-cards period-${schedPeriod}">${cards}</div>`;
-    document.querySelectorAll('#schedTable .agent-name-row[data-date], #schedTable .day-card-date[data-date]').forEach(el=>
-      el.addEventListener('click',()=>{
-        selectedDate=el.dataset.date; activeTab='daily';
-        document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='daily'));
-        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-daily'));
-        render();
-      })
-    );
-  }
-
-  function renderDayCard(date, agents, today) {
-    const d=new Date(date+'T00:00:00'); const dow=d.getDay();
-    const isToday=date===today; const isWknd=dow===0||dow===6;
-    const dayLabel=d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-    const buckets={office:[],wfh:[],accom:[],extra:[],pto:[],jiffy:[],halfjiffy:[],unpaid:[],off:[]};
-    agents.forEach(a=>{
-      const s=statusForDate(a,date);
-      if(s==='office'||s==='accom_office_change') buckets.office.push({a,s});
-      else if(s==='wfh') buckets.wfh.push({a,s});
-      else if(s==='accom_wfh'||s==='accom_early'||s==='accom_late'||s==='accom_general') buckets.accom.push({a,s});
-      else if(s==='extra_hours_wfh') buckets.extra.push({a,s});
-      else if(s==='pto') buckets.pto.push({a,s});
-      else if(s==='jiffy_day') buckets.jiffy.push({a,s});
-      else if(s==='half_jiffy') buckets.halfjiffy.push({a,s});
-      else if(s==='unpaid') buckets.unpaid.push({a,s});
-      else if(s==='off') buckets.off.push({a,s});
-    });
-    const scheduled=agents.filter(a=>(a.schedule[dow]||'off')!=='off').length;
-    const onLeave=buckets.pto.length+buckets.jiffy.length+buckets.halfjiffy.length+buckets.unpaid.length;
-    const working=scheduled-onLeave;
-    const coverage=scheduled===0?null:Math.round(100*working/scheduled);
-    const covCls=coverage===null?'':coverage>=state.settings.coverageGreen?'good':coverage>=state.settings.coverageAmber?'ok':'bad';
-    const section=(label,swatchCls,items)=>{
-      if(!items.length) return '';
-      return `<div class="status-section">
-        <div class="status-section-head">
-          <span class="label"><span class="swatch s-${swatchCls}"></span>${label}</span>
-          <span class="count">${items.length}</span>
-        </div>
-        <div class="agent-names">${items.map(({a,s})=>{
-          const note=state.overrides[date]?.[a.id]?.accomNote||state.overrides[date]?.[a.id]?.note;
-          const tag=(s==='accom_wfh'||s==='accom_early'||s==='accom_late'||s==='accom_general')?
-            ` <span class="tag">${escapeHtml(note||STATUSES[s].short.replace('Accom ',''))}</span>`:'';
-          return `<div class="agent-name-row" data-date="${date}">${escapeHtml(a.name)}${tag}</div>`;
-        }).join('')}</div></div>`;
+  let pendingPayload=null;
+  document.getElementById('reqForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!configured) return;
+    const agent=AGENTS.find(a=>a.name===agentSel.value);
+    if(!agent){showToast('Pick your name first.','err');return;}
+    if(!topType){showToast('Pick a request type.','err');return;}
+    const date=document.getElementById('date').value;
+    if(!date){showToast('Pick a date.','err');return;}
+    let row={
+      agent_name:agent.name, agent_supervisor:agent.supervisor, agent_team:agent.team,
+      request_date:date,
+      reason:document.getElementById('reason').value.trim()||null,
+      coverage:document.getElementById('coverage').value.trim()||null,
     };
-    const total=Object.values(buckets).reduce((s,b)=>s+b.length,0);
-    return `<div class="day-card ${isToday?'today':''} ${isWknd?'weekend':''}">
-      <div class="day-card-head">
-        <div class="day-card-date" data-date="${date}">${dayLabel}</div>
-        ${coverage===null?'':`<div class="day-card-cov cov-${covCls}">${coverage}%</div>`}
-      </div>
-      <div class="day-card-summary">
-        <b>${working}</b>/${scheduled} working · <b>${buckets.office.length}</b> office · <b>${buckets.wfh.length+buckets.accom.length+buckets.extra.length}</b> WFH${onLeave?' · <b>'+onLeave+'</b> on leave':''}
-      </div>
-      ${section('In Office','office',buckets.office)}
-      ${section('Regular WFH','wfh',buckets.wfh)}
-      ${section('Accommodations','accom',buckets.accom)}
-      ${section('Extra Hrs WFH','extra',buckets.extra)}
-      ${section('PTO','pto',buckets.pto)}
-      ${section('Jiffy Day','jiffy',buckets.jiffy)}
-      ${section('Half Jiffy','halfjiffy',buckets.halfjiffy)}
-      ${section('Unpaid','unpaid',buckets.unpaid)}
-      ${section('Day Off','off',buckets.off)}
-      ${total===0?'<div class="day-card-empty">No agents</div>':''}
-    </div>`;
-  }
+    let isException=false;
+    if(topType==='accom'){
+      if(!accomSubType){showToast('Pick an accommodation type.','err');return;}
+      if(accomSubType==='accom_general'&&!row.reason){showToast('Please describe what you need for a General accommodation.','err');return;}
+      row.request_type=accomSubType;
+      if(accomSubType==='accom_wfh'&&weeklyAccomWfhUsed>=ACCOM_WFH_WEEKLY_CAP){
+        isException=true;
+        row.reason=`[EXCEPTION REQUEST — over weekly cap of ${ACCOM_WFH_WEEKLY_CAP}] ${row.reason||''}`.trim();
+      }
+    } else if(topType==='extra_hours_wfh'){
+      if(currentBalance<1){showToast('No credits available to redeem.','err');return;}
+      row.request_type='extra_hours_wfh';
+    } else if(topType==='ot_claim'){
+      const hrs=recalcOtHours();
+      if(!hrs||hrs<=0){showToast('Enter valid OT start/end times.','err');return;}
+      row.request_type='ot_claim';
+      row.ot_start_time=document.getElementById('otStart').value;
+      row.ot_end_time=document.getElementById('otEnd').value;
+      row.ot_hours=hrs;
+      row.ot_purpose=document.getElementById('otPurpose').value.trim()||null;
+      row.ot_pre_authorizer=document.getElementById('otAuth').value.trim()||null;
+      row.reason=null; row.coverage=null;
+    }
+    pendingPayload={row,isException,agent};
+    showConfirmation();
+  });
 
-  // ============== COVERAGE HEATMAP ==============
-  function renderCoverage() {
-    document.getElementById('covDate').value = covStart;
-    populateSelect('covSupervisor', covSupervisor);
-    document.querySelectorAll('#covPeriodToggle button').forEach(b =>
-      b.classList.toggle('active', b.dataset.period===covPeriod));
-    const today=todayISO();
-    const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    let displayDays;
-    if(covPeriod==='day') displayDays=[covStart];
-    else if(covPeriod==='week'){
-      const d=new Date(covStart+'T00:00:00'); d.setDate(d.getDate()-d.getDay());
-      const sunStart=isoFromDate(d);
-      displayDays=[0,1,2,3,4,5,6].map(i=>addDays(sunStart,i));
+  function showConfirmation(){
+    const{row,isException,agent}=pendingPayload;
+    const dateLabel=new Date(row.request_date+'T00:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    let body=`
+      <div class="review-row"><div class="label">From</div><div class="val">${agent.name}<div style="font-size:11px;color:var(--muted);font-weight:400">${agent.supervisor} · ${agent.team}</div></div></div>
+      <div class="review-row"><div class="label">Type</div><div class="val">${TYPE_LABEL[row.request_type]||row.request_type}</div></div>
+      <div class="review-row"><div class="label">Date</div><div class="val">${dateLabel}</div></div>`;
+    if(row.request_type==='ot_claim'){
+      body+=`<div class="review-row"><div class="label">OT window</div><div class="val">${row.ot_start_time} – ${row.ot_end_time} (${row.ot_hours.toFixed(2)} hrs)</div></div>`;
+      if(row.ot_purpose) body+=`<div class="review-row"><div class="label">Purpose</div><div class="val">${escapeHtml(row.ot_purpose)}</div></div>`;
+      if(row.ot_pre_authorizer) body+=`<div class="review-row"><div class="label">Pre-auth by</div><div class="val">${escapeHtml(row.ot_pre_authorizer)}</div></div>`;
     } else {
-      const [y,m]=covStart.split('-').map(Number);
-      const lastDay=new Date(y,m,0).getDate(); displayDays=[];
-      for(let dd=1;dd<=lastDay;dd++) displayDays.push(`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);
+      if(row.reason) body+=`<div class="review-row"><div class="label">Reason / note</div><div class="val">${escapeHtml(row.reason)}</div></div>`;
+      if(row.coverage) body+=`<div class="review-row"><div class="label">Coverage</div><div class="val">${escapeHtml(row.coverage)}</div></div>`;
     }
-    let agents=state.agents.slice();
-    if(covSupervisor) agents=agents.filter(a=>a.supervisor===covSupervisor);
-    const slots=[];
-    for(let h=6;h<=20;h++){
-      slots.push({value:h,label:`${String(h).padStart(2,'0')}:00`,onHour:true});
-      if(h<20) slots.push({value:h+0.5,label:`${String(h).padStart(2,'0')}:30`,onHour:false});
-    }
-    const matrix=slots.map(slot=>displayDays.map(date=>{
-      const dow=new Date(date+'T00:00:00').getDay(); let count=0;
-      agents.forEach(a=>{
-        const sh=SHIFT_HOURS[a.team]; if(!sh) return;
-        if(slot.value<sh.start||slot.value>=sh.end) return;
-        if((a.schedule[dow]||'off')==='off') return;
-        const s=statusForDate(a,date);
-        if(!LEAVE_TYPES.includes(s)) count++;
-      }); return count;
-    }));
-    const max=Math.max(1,...matrix.flat());
-    let html='<div class="staff-heatmap-wrap">';
-    html+=`<div class="staff-heatmap-title">Total staffed by time slot
-      <div class="legend">Light = fewer
-        <span class="scale">
-          <span style="background:hsl(213,85%,95%)"></span><span style="background:hsl(213,85%,80%)"></span>
-          <span style="background:hsl(213,85%,65%)"></span><span style="background:hsl(213,85%,50%)"></span>
-          <span style="background:hsl(213,85%,40%)"></span>
-        </span>Dark = more (peak: ${max})</div></div>`;
-    html+='<div class="staff-heatmap-overflow"><table class="staff-heatmap"><thead><tr><th class="time-col">Time</th>';
-    displayDays.forEach(date=>{
-      const d=new Date(date+'T00:00:00'); const dow=d.getDay();
-      html+=`<th class="day-col ${date===today?'today':''}">${dowNames[dow]}<div class="date-sub">${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div></th>`;
-    });
-    html+='</tr></thead><tbody>';
-    slots.forEach((slot,si)=>{
-      html+=`<tr class="${slot.onHour&&si>0?'boundary':''}"><td class="time-col">${slot.label}</td>`;
-      displayDays.forEach((date,di)=>{
-        const count=matrix[si][di];
-        if(count===0){ html+=`<td class="staff-cell empty">—</td>`; }
-        else {
-          const ratio=count/max; const lightness=Math.round(95-ratio*55);
-          const fontColor=ratio>0.5?'white':'#1e3a8a';
-          html+=`<td class="staff-cell" style="background:hsl(213,85%,${lightness}%);color:${fontColor}" data-date="${date}" data-slot="${slot.label}" data-slot-value="${slot.value}">${count}</td>`;
-        }
-      });
-      html+='</tr>';
-    });
-    html+='</tbody></table></div></div>';
-    document.getElementById('covContainer').innerHTML=html;
-    document.querySelectorAll('#covContainer .staff-cell[data-date]').forEach(el=>
-      el.addEventListener('click',()=>showCoverageDetail(el.dataset.date,el.dataset.slot,parseFloat(el.dataset.slotValue))));
+    if(isException) body+=`<div class="rule-banner show danger" style="margin-top:14px"><strong>⚠ Exception request.</strong> You're over the weekly cap. Your supervisor will see this flagged and decide whether to approve.</div>`;
+    body+=`<p style="font-size:12px;color:var(--muted);margin-top:14px">Your supervisor will review this in the tracker dashboard. Check back here to see when it's approved or denied.</p>`;
+    document.getElementById('confirmBody').innerHTML=body;
+    const btn=document.getElementById('confirmSendBtn');
+    btn.classList.toggle('warning',isException);
+    btn.textContent=isException?'Send exception request':'Confirm & send';
+    document.getElementById('confirmModal').classList.add('show');
   }
 
-  function showCoverageDetail(date, slotLabel, slotValue) {
-    let agents=state.agents.slice();
-    if(covSupervisor) agents=agents.filter(a=>a.supervisor===covSupervisor);
-    const dow=new Date(date+'T00:00:00').getDay();
-    const staffed=[], missing=[];
-    agents.forEach(a=>{
-      const sh=SHIFT_HOURS[a.team]; if(!sh) return;
-      if(slotValue<sh.start||slotValue>=sh.end) return;
-      if((a.schedule[dow]||'off')==='off') return;
-      const s=statusForDate(a,date);
-      if(LEAVE_TYPES.includes(s)) missing.push({a,s}); else staffed.push({a,s});
-    });
-    const dl=new Date(date+'T00:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-    document.getElementById('covDetailTitle').textContent=`${dl} at ${slotLabel} — ${staffed.length} staffed · ${missing.length} missing`;
-    const renderList=(items,emptyMsg)=>items.length===0?`<div class="empty" style="padding:14px">${emptyMsg}</div>`:
-      items.map(({a,s})=>`<div class="leave-list-item">
-        <div><strong>${escapeHtml(a.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(a.supervisor||'')} · ${escapeHtml(a.team||'')}</div></div>
-        <span class="status-pill ${STATUSES[s]?.class||'off'}" style="display:inline-flex;padding:3px 9px;font-size:11px">${STATUSES[s]?.label||s}</span>
+  document.getElementById('confirmSendBtn').addEventListener('click',async()=>{
+    if(!pendingPayload) return;
+    const btn=document.getElementById('confirmSendBtn');
+    btn.disabled=true; btn.textContent='Sending…';
+    const{row,isException,agent}=pendingPayload;
+    const{error}=await supabase.from('requests').insert(row);
+    if(error){showToast('Could not submit: '+error.message,'err');btn.disabled=false;return;}
+    document.getElementById('confirmModal').classList.remove('show');
+    btn.disabled=false; btn.textContent='Confirm & send';
+    showToast(isException?'Exception request submitted. Your supervisor will decide.':'Request submitted! Your supervisor will be notified.','ok');
+    document.getElementById('reqForm').reset();
+    document.querySelectorAll('.pill,.sub-pill').forEach(x=>x.classList.remove('active','accom','ot_claim','extra_hours_wfh','accom_wfh','accom_early','accom_late','accom_office_change','accom_general'));
+    document.querySelectorAll('.type-detail').forEach(x=>x.classList.remove('show'));
+    document.getElementById('generalTip').style.display='none';
+    topType=''; accomSubType=''; pendingPayload=null;
+    document.getElementById('agent').value=agent.name;
+    document.getElementById('date').value=todayISO();
+    updateRuleStatus(); refreshContext(agent.name); loadHistory(agent.name);
+  });
+
+  document.querySelectorAll('[data-close-modal]').forEach(b=>b.addEventListener('click',()=>document.getElementById('confirmModal').classList.remove('show')));
+  document.getElementById('confirmModal').addEventListener('click',e=>{if(e.target.id==='confirmModal')document.getElementById('confirmModal').classList.remove('show');});
+
+  function showToast(msg,kind='ok'){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.className=`toast show ${kind}`;
+    setTimeout(()=>t.classList.remove('show'),5000);
+  }
+
+  let historyFilter='all';
+  document.getElementById('historyFilter').addEventListener('change',e=>{historyFilter=e.target.value;if(agentSel.value)loadHistory(agentSel.value);});
+
+  async function loadHistory(name){
+    const list=document.getElementById('historyList');
+    if(!name){list.innerHTML='<div class="empty">Pick your name above.</div>';return;}
+    if(!supabase){list.innerHTML='<div class="empty">Supabase not set up yet.</div>';return;}
+    list.innerHTML='<div class="empty">Loading…</div>';
+    const{data,error}=await supabase.from('requests').select('*').eq('agent_name',name).order('created_at',{ascending:false}).limit(20);
+    if(error){list.innerHTML=`<div class="empty">Error: ${error.message}</div>`;return;}
+    let items=data||[];
+
+    // ---- Decision notifications ----
+    // Track which request IDs the agent has already seen as decided
+    const seenKey = `seenDecisions_${name}`;
+    const seen = new Set(JSON.parse(localStorage.getItem(seenKey)||'[]'));
+    const newlyDecided = items.filter(r =>
+      (r.status==='approved'||r.status==='denied') && !seen.has(r.id)
+    );
+    const banner = document.getElementById('decisionBanner');
+    if (newlyDecided.length > 0) {
+      const approved = newlyDecided.filter(r=>r.status==='approved');
+      const denied = newlyDecided.filter(r=>r.status==='denied');
+      let html = '';
+      approved.forEach(r => {
+        html += `<div style="background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div>✅ <strong>Approved:</strong> ${TYPE_LABEL[r.request_type]||r.request_type} on ${formatDate(r.request_date)}</div>
+          <button data-dismiss="${r.id}" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#166534;padding:0;line-height:1;flex-shrink:0;">×</button>
+        </div>`;
+      });
+      denied.forEach(r => {
+        html += `<div style="background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div>❌ <strong>Denied:</strong> ${TYPE_LABEL[r.request_type]||r.request_type} on ${formatDate(r.request_date)}${r.decision_note?` — <em>${escapeHtml(r.decision_note)}</em>`:''}</div>
+          <button data-dismiss="${r.id}" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#991b1b;padding:0;line-height:1;flex-shrink:0;">×</button>
+        </div>`;
+      });
+      banner.innerHTML = html;
+      banner.style.display = 'block';
+      banner.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', () => {
+        seen.add(b.dataset.dismiss);
+        localStorage.setItem(seenKey, JSON.stringify([...seen]));
+        b.closest('div[style]').remove();
+        if (!banner.querySelector('[data-dismiss]')) banner.style.display = 'none';
+      }));
+    } else {
+      banner.style.display = 'none';
+    }
+
+    if(historyFilter==='pending') items=items.filter(r=>r.status==='pending');
+    if(historyFilter==='decided') items=items.filter(r=>['approved','denied','cancelled'].includes(r.status));
+    if(!items.length){list.innerHTML=`<div class="empty">No ${historyFilter==='all'?'':historyFilter+' '}requests.</div>`;return;}
+    list.innerHTML=items.map(r=>`
+      <div class="item">
+        <div class="row1">
+          <div class="left">
+            <div>${formatDate(r.request_date)} — ${TYPE_LABEL[r.request_type]||r.request_type}</div>
+            <div class="item-meta">${escapeHtml(r.reason||r.ot_purpose||'')}</div>
+          </div>
+          <span class="status ${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span>
+        </div>
+        ${r.status==='denied'?`<div class="denial"><strong>Denied:</strong> ${escapeHtml(r.decision_note||'No reason provided.')}</div>`:''}
+        ${r.status==='pending'?`<button class="item-cancel" data-cancel="${r.id}">Cancel this request</button>`:''}
       </div>`).join('');
-    document.getElementById('covDetailBody').innerHTML=`
-      <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px;">Staffed (${staffed.length})</h3>
-      ${renderList(staffed,'No one staffed in this slot.')}
-      <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 8px;">Missing — on leave (${missing.length})</h3>
-      ${renderList(missing,'No one missing — full coverage.')}`;
-    document.getElementById('covDetailBody').querySelectorAll('.leave-list-item').forEach(el=>{
-      el.style.cursor='pointer';
-      el.addEventListener('click',()=>{
-        document.getElementById('covDetailModal').classList.remove('show');
-        selectedDate=date; activeTab='daily';
-        document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='daily'));
-        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-daily'));
-        render();
-      });
-    });
-    document.getElementById('covDetailModal').classList.add('show');
+    list.querySelectorAll('[data-cancel]').forEach(b=>b.addEventListener('click',()=>cancelRequest(b.dataset.cancel)));
   }
 
-  function shiftCov(direction) {
-    if(covPeriod==='day') covStart=addDays(covStart,direction);
-    else if(covPeriod==='week') covStart=addDays(covStart,direction*7);
-    else { const [y,m]=covStart.split('-').map(Number); covStart=isoFromDate(new Date(y,m-1+direction,1)); }
-    renderCoverage();
-  }
-  function shiftSched(direction) {
-    if(schedPeriod==='day') schedStart=addDays(schedStart,direction);
-    else if(schedPeriod==='week') schedStart=addDays(schedStart,direction*7);
-    else { const [y,m]=schedStart.split('-').map(Number); schedStart=isoFromDate(new Date(y,m-1+direction,1)); }
-    renderSchedule();
+  async function cancelRequest(id){
+    if(!confirm('Cancel this pending request?')) return;
+    const{error}=await supabase.from('requests').update({status:'cancelled'}).eq('id',id);
+    if(error){alert(error.message);return;}
+    showToast('Request cancelled.','ok'); loadHistory(agentSel.value);
   }
 
-  // ============== DISPATCHER ==============
-  function render() {
-    if(activeTab==='daily')    renderDaily();
-    if(activeTab==='monthly')  renderSchedule();
-    if(activeTab==='coverage') renderCoverage();
-    if(activeTab==='pending')  renderPending();
-    if(activeTab==='leave')    renderLeave();
-    if(activeTab==='usage')    renderUsage();
-    if(activeTab==='bank')     renderBank();
-    if(activeTab==='trends')   renderTrends();
-  }
-
-  // ============== SCHEDULE EDITOR ==============
-  function openScheduleModal() { renderScheduleTable(); document.getElementById('scheduleModal').classList.add('show'); }
-  function renderScheduleTable() {
-    const t=document.getElementById('scheduleTable');
-    const rows=[...state.agents].sort((a,b)=>(a.team||'').localeCompare(b.team||'')||a.name.localeCompare(b.name));
-    t.innerHTML=`<thead><tr><th style="text-align:left;padding-left:12px">Agent</th>
-      <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th></th></tr></thead>
-      <tbody>${rows.map(a=>`<tr>
-        <td class="name">
-          <input type="text" value="${escapeAttr(a.name)}" data-rename="${a.id}" style="border:none;background:transparent;font-weight:600;width:100%;padding:2px 4px;" />
-          <div style="font-size:10px;color:var(--muted);padding-left:4px">${escapeHtml(a.supervisor||'')} · ${escapeHtml(a.team||'')}</div>
-        </td>
-        ${[1,2,3,4,5,6].map(dow=>{
-          const s=a.schedule[dow]||'off';
-          return `<td><span class="day-cell ${s}" data-cycle="${a.id}|${dow}">${s==='office'?'Office':s==='wfh'?'WFH':'Off'}</span></td>`;
-        }).join('')}
-        <td><button class="btn-danger" data-delete-agent="${a.id}" style="padding:4px 8px;font-size:11px">Delete</button></td>
-      </tr>`).join('')}</tbody>`;
-    t.querySelectorAll('[data-cycle]').forEach(c=>c.addEventListener('click',()=>{
-      const [id,dow]=c.dataset.cycle.split('|');
-      const a=state.agents.find(x=>x.id===id);
-      const cur=a.schedule[dow]||'off';
-      a.schedule[dow]=cur==='office'?'wfh':cur==='wfh'?'off':'office';
-      saveState(); renderScheduleTable(); render();
-    }));
-    t.querySelectorAll('[data-rename]').forEach(inp=>inp.addEventListener('change',e=>{
-      const a=state.agents.find(x=>x.id===e.target.dataset.rename);
-      if(a&&e.target.value.trim()){ a.name=e.target.value.trim(); saveState(); renderScheduleTable(); render(); }
-    }));
-    t.querySelectorAll('[data-delete-agent]').forEach(b=>b.addEventListener('click',()=>{
-      const a=state.agents.find(x=>x.id===b.dataset.deleteAgent);
-      if(!confirm(`Delete agent "${a.name}"? This also removes their overrides.`)) return;
-      state.agents=state.agents.filter(x=>x.id!==a.id);
-      Object.keys(state.overrides).forEach(date=>{
-        if(state.overrides[date][a.id]) delete state.overrides[date][a.id];
-        if(Object.keys(state.overrides[date]).length===0) delete state.overrides[date];
-      });
-      saveState(); renderScheduleTable(); render();
-    }));
-  }
-  function addAgent() {
-    const n=document.getElementById('newAgentName').value.trim();
-    const s=document.getElementById('newAgentSupervisor').value.trim();
-    const t=document.getElementById('newAgentTeam').value.trim();
-    if(!n) return;
-    state.agents.push({ id:uid(), name:n, supervisor:s, team:t,
-      schedule:{1:'office',2:'office',3:'office',4:'office',5:'office',6:'off',0:'off'} });
-    saveState(); renderScheduleTable(); render();
-    document.getElementById('newAgentName').value='';
-    document.getElementById('newAgentSupervisor').value='';
-    document.getElementById('newAgentTeam').value='';
-  }
-
-  // ============== HELPERS ==============
-  function formatBalance(b) {
-    if(b===null||b===undefined||isNaN(b)) return '0';
-    if(Number.isInteger(b)) return b;
-    return b.toFixed(2).replace(/\.?0+$/,'');
-  }
+  function formatDate(iso){return new Date(iso+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});}
   function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function escapeAttr(s){return escapeHtml(s);}
 
-  // ============== WIRE UP ==============
-  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-    activeTab=t.dataset.tab;
-    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===`tab-${activeTab}`));
-    render();
-  }));
-  document.getElementById('datePicker').addEventListener('change',e=>{selectedDate=e.target.value||todayISO();render();});
-  document.getElementById('todayBtn').addEventListener('click',()=>{selectedDate=todayISO();render();});
-  document.getElementById('searchInput').addEventListener('input',e=>{searchText=e.target.value;if(activeTab==='daily')render();});
-  document.getElementById('supervisorFilter').addEventListener('change',e=>{supervisorFilter=e.target.value;if(activeTab==='daily')render();});
-  document.getElementById('clearOverridesBtn').addEventListener('click',clearAllOverridesForDay);
-  document.querySelectorAll('#viewToggle button').forEach(b=>b.addEventListener('click',()=>{
-    viewMode=b.dataset.view;
-    document.querySelectorAll('#viewToggle button').forEach(x=>x.classList.toggle('active',x===b)); render();
-  }));
-  document.querySelectorAll('#groupToggle button').forEach(b=>b.addEventListener('click',()=>{
-    groupMode=b.dataset.group;
-    document.querySelectorAll('#groupToggle button').forEach(x=>x.classList.toggle('active',x===b)); render();
-  }));
-  document.querySelectorAll('#periodToggle button').forEach(b=>b.addEventListener('click',()=>{schedPeriod=b.dataset.period;renderSchedule();}));
-  document.getElementById('schedDate').addEventListener('change',e=>{schedStart=e.target.value||todayISO();renderSchedule();});
-  document.getElementById('schedPrev').addEventListener('click',()=>shiftSched(-1));
-  document.getElementById('schedNext').addEventListener('click',()=>shiftSched(1));
-  document.getElementById('schedToday').addEventListener('click',()=>{schedStart=todayISO();renderSchedule();});
-  document.getElementById('schedSearch').addEventListener('input',e=>{schedSearch=e.target.value;renderSchedule();});
-  document.getElementById('schedSupervisor').addEventListener('change',e=>{schedSupervisor=e.target.value;renderSchedule();});
-  document.getElementById('schedSort').addEventListener('change',e=>{schedSort=e.target.value;renderSchedule();});
-  document.querySelectorAll('#covPeriodToggle button').forEach(b=>b.addEventListener('click',()=>{covPeriod=b.dataset.period;renderCoverage();}));
-  document.getElementById('covDate').addEventListener('change',e=>{covStart=e.target.value||todayISO();renderCoverage();});
-  document.getElementById('covPrev').addEventListener('click',()=>shiftCov(-1));
-  document.getElementById('covNext').addEventListener('click',()=>shiftCov(1));
-  document.getElementById('covToday').addEventListener('click',()=>{covStart=todayISO();renderCoverage();});
-  document.getElementById('covSupervisor').addEventListener('change',e=>{covSupervisor=e.target.value;renderCoverage();});
-  document.getElementById('refreshPendingBtn').addEventListener('click',fetchAllSupabase);
-  document.getElementById('pendingFilter').addEventListener('change',e=>{pendingFilter=e.target.value;render();});
-  document.getElementById('pendingSupervisor').addEventListener('change',e=>{pendingSupervisorFilter=e.target.value;render();});
-  // FIX: addLeave now local-only, no Supabase call
-  document.getElementById('addLeaveBtn').addEventListener('click',addLeave);
-  document.getElementById('leaveListFilter').addEventListener('change',e=>{leaveListFilter=e.target.value;renderLeaveList();});
-  document.getElementById('leaveTypeFilter').addEventListener('change',e=>{leaveTypeFilter=e.target.value;renderLeaveList();});
-  document.getElementById('usageFrom').addEventListener('change',e=>{usageFrom=e.target.value;renderUsage();});
-  document.getElementById('usageTo').addEventListener('change',e=>{usageTo=e.target.value;renderUsage();});
-  document.getElementById('usageQuickWeek').addEventListener('click',()=>{usageFrom=startOfWeek(todayISO());usageTo=endOfWeek(todayISO());renderUsage();});
-  document.getElementById('usageQuickMonth').addEventListener('click',()=>{
-    const d=new Date();usageFrom=isoFromDate(new Date(d.getFullYear(),d.getMonth(),1));
-    usageTo=isoFromDate(new Date(d.getFullYear(),d.getMonth()+1,0));renderUsage();});
-  document.getElementById('usageQuick90').addEventListener('click',()=>{usageFrom=addDays(todayISO(),-89);usageTo=todayISO();renderUsage();});
-  document.getElementById('usageSupervisor').addEventListener('change',e=>{usageSupervisor=e.target.value;renderUsage();});
-  document.getElementById('exportUsageBtn').addEventListener('click',exportUsageCSV);
-  document.getElementById('bankSearch').addEventListener('input',e=>{bankSearch=e.target.value;renderBank();});
-  document.getElementById('bankSupervisor').addEventListener('change',e=>{bankSupervisor=e.target.value;renderBank();});
-  document.getElementById('trendFrom').addEventListener('change',e=>{trendFrom=e.target.value;renderTrends();});
-  document.getElementById('trendTo').addEventListener('change',e=>{trendTo=e.target.value;renderTrends();});
-  document.getElementById('trendQuick30').addEventListener('click',()=>{trendFrom=addDays(todayISO(),-29);trendTo=todayISO();renderTrends();});
-  document.getElementById('trendQuick90').addEventListener('click',()=>{trendFrom=addDays(todayISO(),-89);trendTo=todayISO();renderTrends();});
-  document.getElementById('editScheduleBtn').addEventListener('click',openScheduleModal);
-  document.getElementById('addAgentBtn').addEventListener('click',addAgent);
-  document.getElementById('settingsBtn').addEventListener('click',()=>{
-    document.getElementById('settingFlexLimit').value=state.settings.flexLimitPerWeek;
-    document.getElementById('settingHoursPerCredit').value=state.settings.hoursPerCredit;
-    document.getElementById('settingOtCutoff').value=state.settings.otCutoffDays;
-    document.getElementById('settingCovGreen').value=state.settings.coverageGreen;
-    document.getElementById('settingCovAmber').value=state.settings.coverageAmber;
-    document.getElementById('settingWeekStart').value=state.settings.weekStart;
-    document.getElementById('settingExtraExpiry').value=state.settings.extraExpiry;
-    document.getElementById('settingsModal').classList.add('show');
-  });
-  document.getElementById('saveSettings').addEventListener('click',()=>{
-    state.settings.flexLimitPerWeek=parseInt(document.getElementById('settingFlexLimit').value,10)||1;
-    state.settings.hoursPerCredit=parseFloat(document.getElementById('settingHoursPerCredit').value)||4;
-    state.settings.otCutoffDays=parseInt(document.getElementById('settingOtCutoff').value,10)||14;
-    state.settings.coverageGreen=parseInt(document.getElementById('settingCovGreen').value,10)||95;
-    state.settings.coverageAmber=parseInt(document.getElementById('settingCovAmber').value,10)||85;
-    state.settings.weekStart=parseInt(document.getElementById('settingWeekStart').value,10);
-    state.settings.extraExpiry=document.getElementById('settingExtraExpiry').value||DEFAULT_EXTRA_EXPIRY;
-    saveState();
-    document.getElementById('settingsModal').classList.remove('show');
-    render();
-  });
-  document.querySelectorAll('[data-close-modal]').forEach(b=>b.addEventListener('click',()=>b.closest('.modal-backdrop').classList.remove('show')));
-  document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
-  document.getElementById('exportBtn').addEventListener('click',()=>{
-    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download=`agent-tracker-${todayISO()}.json`; a.click(); URL.revokeObjectURL(a.href);
-  });
-  document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
-  document.getElementById('importFile').addEventListener('change',e=>{
-    const file=e.target.files[0]; if(!file) return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      try{
-        const data=JSON.parse(ev.target.result);
-        if(data&&Array.isArray(data.agents)){
-          if(!confirm('Replace current data with imported file?')) return;
-          state=data;
-          if(!state.overrides) state.overrides={};
-          if(!state.settings) state.settings=defaultSettings();
-          if(!Array.isArray(state.manualLeaves)) state.manualLeaves=[];
-          if(!Array.isArray(state.submissions)) state.submissions=[];
-          saveState(); render();
-        } else alert('Invalid file.');
-      } catch(err){ alert('Could not parse: '+err.message); }
-    };
-    r.readAsText(file); e.target.value='';
-  });
-
-  // Initial render
-  render();
-  if(supabaseConfigured && supabase){
-    fetchAllSupabase();
-    setInterval(fetchAllSupabase, 30000);
-  } else {
-    document.getElementById('pendingConfigWarn').style.display='block';
-  }
-</script>
+  // Auto-poll for decision updates every 30s
+  if(supabase) {
+    setInterval(()=>{ if(agentSel.value) loadHistory(agentSel.value); }, 30000);
+  }</script>
 </body>
 </html>
