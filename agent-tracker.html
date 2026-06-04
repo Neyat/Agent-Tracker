@@ -316,7 +316,6 @@
     <div class="tab" data-tab="leave">Time Off</div>
     <div class="tab" data-tab="usage">Accommodation Usage</div>
     <div class="tab" data-tab="bank">Extra Hours Bank</div>
-    <div class="tab" data-tab="trends">Trends</div>
   </div>
 
   <!-- ======== DAILY STATUS ======== -->
@@ -539,36 +538,6 @@
       <table class="report" id="bankTable"></table>
     </div>
   </div>
-
-  <!-- ======== TRENDS ======== -->
-  <div class="tab-panel" id="tab-trends">
-    <div class="controls">
-      <label>From: <input type="date" id="trendFrom" /></label>
-      <label>To: <input type="date" id="trendTo" /></label>
-      <button class="btn-ghost" id="trendQuick30">Last 30 days</button>
-      <button class="btn-ghost" id="trendQuick90">Last 90 days</button>
-    </div>
-    <div class="report-card">
-      <h2>Accommodations over time — top 5 users</h2>
-      <div class="chart-container" style="height:300px"><canvas id="trendAccomChart"></canvas></div>
-    </div>
-    <div class="report-card">
-      <h2>Top accommodation users</h2>
-      <table class="report" id="topUsersTable"></table>
-    </div>
-    <div class="report-card">
-      <h2>By supervisor — accommodation volume</h2>
-      <table class="report" id="supervisorBreakdownTable"></table>
-    </div>
-    <div class="report-card">
-      <h2>Hourly coverage % — by day of week</h2>
-      <div class="chart-container" style="height:340px"><canvas id="trendCoverageChart"></canvas></div>
-    </div>
-    <div class="report-card">
-      <h2>Daily leave count over time</h2>
-      <div class="chart-container"><canvas id="trendLeaveChart"></canvas></div>
-    </div>
-  </div>
 </div>
 
 <!-- Schedule Editor Modal -->
@@ -686,7 +655,6 @@
 
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  // Robust config check — key must be non-empty and not a placeholder
   const supabaseConfigured = Boolean(
     SUPABASE_URL && !SUPABASE_URL.startsWith('PASTE_') &&
     SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('PASTE_') &&
@@ -699,13 +667,12 @@
   if (supabaseConfigured) {
     try {
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      // Will verify connectivity on first fetch
     } catch(e) {
       console.warn('Supabase init failed:', e);
     }
   }
 
-  const STORAGE_KEY = 'agentTracker.v5'; // bumped to force fresh load with new structure
+  const STORAGE_KEY = 'agentTracker.v5';
 
   const STATUSES = {
     office:               { label:'In Office',       short:'Office',        class:'office' },
@@ -724,7 +691,6 @@
   };
 
   const ACCOM_TYPES = ['accom_wfh','accom_early','accom_late','accom_office_change','accom_general'];
-  // FIX: leave types handled locally via overrides — no longer require Supabase
   const LEAVE_TYPES = ['pto','jiffy_day','half_jiffy','unpaid'];
   const ALL_OVERRIDE_TYPES = [...ACCOM_TYPES, 'extra_hours_wfh', ...LEAVE_TYPES];
 
@@ -780,13 +746,11 @@
   let pendingRequests = [];
   let pendingFilter = 'pending';
   let pendingSupervisorFilter = '';
-  // FIX: manualLeaves now stored in state.manualLeaves (persistent, no Supabase required)
   let ledgerEntries = [];
   let usageFrom, usageTo, usageSupervisor = '';
-  let trendFrom, trendTo;
   let bankSearch = '', bankSupervisor = '';
   let leaveListFilter = 'upcoming', leaveTypeFilter = '';
-  let chartUsage, chartTrendAccom, chartTrendLeave, chartTrendCoverage;
+  let chartUsage;
   let schedPeriod = 'week';
   let schedStart = todayISO();
   let schedSearch = '';
@@ -795,7 +759,6 @@
   let covPeriod = 'week';
   let covStart = todayISO();
   let covSupervisor = '';
-  // For accom_general note prompt
   let pendingAccomGeneralAgentId = null;
 
   function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -811,15 +774,14 @@
     return {
       agents: SEED_AGENTS.map(a => ({ id: uid(), ...a, schedule: { ...a.schedule } })),
       overrides: {},
-      // FIX: manualLeaves now lives in state (localStorage) — no Supabase required
       manualLeaves: [],
       submissions: [],
+      localLedger: [],
       settings: defaultSettings(),
     };
   }
 
   function loadState() {
-    // Migrate from older storage keys — preserve overrides, submissions, manualLeaves
     const OLD_KEYS = ['agentTracker.v4', 'agentTracker.v3', 'agentTracker.v2', 'agentTracker.v1'];
     let migrated = null;
     for (const oldKey of OLD_KEYS) {
@@ -827,35 +789,29 @@
       if (oldRaw) {
         try {
           const oldData = JSON.parse(oldRaw);
-          if (oldData && oldData.overrides) {
-            migrated = oldData;
-            console.log('Migrating data from', oldKey);
-            break;
-          }
+          if (oldData && oldData.overrides) { migrated = oldData; break; }
         } catch(e) {}
       }
     }
-
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      // If v5 already has data, use it (but merge in migrated overrides/submissions if v5 is fresh)
       if (raw) {
         const data = JSON.parse(raw);
         if (data && Array.isArray(data.agents) && data.agents.length) {
-          // If we have migrated data and v5 overrides are empty, restore them
           if (migrated && migrated.overrides && Object.keys(data.overrides||{}).length === 0) {
             data.overrides = migrated.overrides;
             data.submissions = migrated.submissions || data.submissions || [];
-            if (!Array.isArray(data.manualLeaves) || data.manualLeaves.length === 0) {
+            if (!Array.isArray(data.manualLeaves) || data.manualLeaves.length === 0)
               data.manualLeaves = migrated.manualLeaves || [];
-            }
-            console.log('Restored overrides from previous version');
+            if (!Array.isArray(data.localLedger) || data.localLedger.length === 0)
+              data.localLedger = migrated.localLedger || [];
           }
           if (!data.settings) data.settings = defaultSettings();
           Object.assign(data.settings, { ...defaultSettings(), ...data.settings });
           if (!data.overrides) data.overrides = {};
           if (!Array.isArray(data.submissions)) data.submissions = [];
           if (!Array.isArray(data.manualLeaves)) data.manualLeaves = [];
+          if (!Array.isArray(data.localLedger)) data.localLedger = [];
           data.agents.forEach(a => {
             if (a.name === 'Michael Scott Chavez')
               a.schedule = {1:'office',2:'office',3:'office',4:'off',5:'wfh',6:'wfh',0:'off'};
@@ -866,55 +822,20 @@
         }
       }
     } catch(e) {}
-
-    // No v5 data — build from migrated old data if available
     if (migrated) {
       const fresh = defaultState();
       fresh.overrides = migrated.overrides || {};
       fresh.submissions = migrated.submissions || [];
       fresh.manualLeaves = migrated.manualLeaves || [];
+      fresh.localLedger = migrated.localLedger || [];
       if (migrated.settings) Object.assign(fresh.settings, migrated.settings);
-      console.log('Initialized v5 from migrated data');
       return fresh;
     }
-
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (data && Array.isArray(data.agents) && data.agents.length) {
-          if (!data.settings) data.settings = defaultSettings();
-          Object.assign(data.settings, { ...defaultSettings(), ...data.settings });
-          if (!data.overrides) data.overrides = {};
-          if (!Array.isArray(data.submissions)) data.submissions = [];
-          // FIX: migrate manualLeaves from old format if missing
-          if (!Array.isArray(data.manualLeaves)) data.manualLeaves = [];
-          // Fix known schedule corrections
-          data.agents.forEach(a => {
-            if (a.name === 'Michael Scott Chavez')
-              a.schedule = {1:'office',2:'office',3:'office',4:'off',5:'wfh',6:'wfh',0:'off'};
-            if (a.name === 'Brianna Miller')
-              a.schedule = {1:'wfh',2:'off',3:'wfh',4:'wfh',5:'wfh',6:'wfh',0:'off'};
-          });
-          return data;
-        }
-      }
-    } catch(e) {}
     return defaultState();
   }
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-  // ---- manualLeaves helpers (all local now) ----
   function getManualLeaves() { return state.manualLeaves || []; }
-
-  // ---- Status resolution ----
-  // Overrides now support TWO independent layers per agent per date:
-  //   o.leaveType  — HR leave (pto/jiffy_day/half_jiffy/unpaid) — set via dropdown
-  //   o.accomType  — Accommodation or extra hours — set via buttons
-  //   o.type       — legacy single-type (backward compat)
-  //
-  // Half Jiffy is partial: if paired with an accom, accom shows as primary status
-  // but they are counted separately in coverage math.
 
   function leaveForDate(agent, dateISO) {
     const ml = getManualLeaves().find(l =>
@@ -937,7 +858,6 @@
   function statusForDate(agent, dateISO) {
     const leave = leaveForDate(agent, dateISO);
     const accom = accomForDate(agent, dateISO);
-    // Half jiffy is partial — if there's also an accommodation, show accom as primary pill
     if (leave === 'half_jiffy' && accom) return accom;
     if (leave) return leave;
     if (accom) return accom;
@@ -945,7 +865,6 @@
     return agent.schedule[dow] || 'off';
   }
 
-  // ---- Date helpers ----
   function isoFromDate(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
@@ -992,7 +911,11 @@
       console.warn('Supabase fetch error:', e);
     }
     updatePendingBadge();
+    // Render the active tab
     render();
+    // Always keep daily status current in the background (heatmap, summary, roster)
+    // so switching to it shows fresh data regardless of what tab triggered the fetch
+    if (activeTab !== 'daily') renderDaily();
   }
 
   function updatePendingBadge() {
@@ -1011,11 +934,6 @@
     return (requested - created) <= 24 * 3600 * 1000;
   }
 
-  function isLateOverride(agentId, dateISO) {
-    return !!(state.overrides[dateISO]?.[agentId]?.lateRequest);
-  }
-
-  // ---- Filtered agents ----
   function filteredAgents() {
     return state.agents.filter(a => {
       if (searchText && !a.name.toLowerCase().includes(searchText.toLowerCase())) return false;
@@ -1073,7 +991,6 @@
     });
     const dow = new Date(selectedDate + 'T00:00:00').getDay();
     const scheduled = visible.filter(a => (a.schedule[dow] || 'off') !== 'off').length;
-    // half_jiffy = 0.5 absence; pto/jiffy_day/unpaid = full absence
     const onLeave = visible.filter(a => {
       const lv = leaveForDate(a, selectedDate);
       return lv === 'pto' || lv === 'jiffy_day' || lv === 'unpaid';
@@ -1112,7 +1029,7 @@
   }
 
   function renderHeatmap() {
-    const hours = []; for (let h=6; h<=20; h++) hours.push(h);
+    const hours = []; for (let h=6; h<=19; h++) hours.push(h);
     const visible = state.agents.filter(a => {
       if (supervisorFilter && a.supervisor !== supervisorFilter) return false;
       return true;
@@ -1126,7 +1043,6 @@
         if ((a.schedule[dow] || 'off') === 'off') return;
         scheduled++;
         const lv = leaveForDate(a, selectedDate);
-        // half_jiffy = partial day, counts as present for coverage; full leave = absent
         if (!lv || lv === 'half_jiffy') working++;
       });
       const pct = scheduled === 0 ? null : Math.round(100 * working / scheduled);
@@ -1230,14 +1146,12 @@
     const balance = balanceForAgent(agent.name);
 
     const accomNote = (accom === 'accom_general') ? (override?.accomNote || override?.note || '') : '';
-
     const curAccomType = accom || '';
     const curLeaveType = leave || '';
 
     const leaveInfo = leave ? (STATUSES[leave] || STATUSES.off) : null;
     const accomInfo = accom ? (STATUSES[accom] || null) : null;
 
-    // Build status pills HTML (no nested template literals)
     const isLate = !!(override?.lateRequest);
     const lateBadge = isLate ? ' <span style="background:#f97316;color:white;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700;">⚡ Late</span>' : '';
     let statusPillsHtml;
@@ -1250,9 +1164,11 @@
 
     const hasOverride = override && Object.keys(override).some(k => k !== 'ts' && override[k]);
     const overrideTagHtml = hasOverride ? '<span class="override-tag">Override</span>' : (leave && !override ? '<span class="override-tag">Leave</span>' : '');
-
     const accomNoteHtml = accomNote ? ' &middot; <em style="color:var(--warn)">' + escapeHtml(accomNote) + '</em>' : '';
-    const extraBtnDisabled = (balance < 1 && curAccomType !== 'extra_hours_wfh') ? 'disabled title="No credits"' : '';
+
+    // Supervisors can always set Extra WFH — balance check is advisory only (shown as orange border)
+    const extraBtnDisabled = '';
+    const extraBtnLowBal = (balance < 1 && curAccomType !== 'extra_hours_wfh');
     const clearLeaveBtnHtml = curLeaveType ? '<button class="reset-btn" data-clear-leave="' + agent.id + '" title="Clear HR leave" style="padding:3px 6px;font-size:11px">&#x2715;</button>' : '';
     const resetAllHtml = (accom || leave) ? '<button class="reset-btn" data-reset="' + agent.id + '" title="Clear all overrides">&#x21BA; All</button>' : '';
 
@@ -1285,7 +1201,7 @@
         '<button class="status-btn accom_early ' + (curAccomType === 'accom_early' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_early">Early</button>' +
         '<button class="status-btn accom_late ' + (curAccomType === 'accom_late' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_late">Late</button>' +
         '<button class="status-btn accom_general ' + (curAccomType === 'accom_general' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="accom_general" title="General — doctor appt, makeup time, etc.">General</button>' +
-        '<button class="status-btn extra_hours_wfh ' + (curAccomType === 'extra_hours_wfh' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="extra_hours_wfh" ' + extraBtnDisabled + '>&#x1F381; Extra</button>' +
+        '<button class="status-btn extra_hours_wfh ' + (curAccomType === 'extra_hours_wfh' ? 'active' : '') + '" data-agent="' + agent.id + '" data-accom="extra_hours_wfh"' + (extraBtnLowBal ? ' style="border-color:#f97316;color:#9a3412;" title="Balance 0 — supervisor override (no credit deducted)"' : ' title="Redeem 1 Extra Hrs credit for WFH"') + '>&#x1F381; Extra</button>' +
         '<span class="leave-dropdown-wrap" style="display:inline-flex;align-items:center;gap:3px;">' +
           '<select class="leave-select" data-agent="' + agent.id + '" style="' + leaveSelectStyle + '">' +
             '<option value="">HR leave…</option>' +
@@ -1314,8 +1230,14 @@
         }
         if (newAccom === 'extra_hours_wfh') {
           const wasExtra = curAccom === 'extra_hours_wfh';
-          if (!wasExtra && balance < 1) { alert(agent.name + ' has no Extra Hours credits.'); return; }
-          if (!wasExtra) addLocalLedgerEntry(agent.name, 'redeem', { credits:1, note:'Manual override redemption' });
+          const bal = balanceForAgent(agent.name);
+          if (!wasExtra) {
+            if (bal >= 1) {
+              // Normal path: deduct a credit
+              addLocalLedgerEntry(agent.name, 'redeem', { credits:1, note:'Supervisor override — manual redemption' });
+            }
+            // If bal < 1: supervisor force-override — no deduction, no block
+          }
         }
         if (curAccom === newAccom) {
           clearAccomOverride(agent.id);
@@ -1357,7 +1279,7 @@
     return row;
   }
 
-  // ---- General accommodation note modal wiring ----
+  // ---- General accommodation note modal ----
   document.getElementById('accomNoteConfirm').addEventListener('click', () => {
     const note = document.getElementById('accomNoteInput').value.trim();
     if (!note) { alert('Please enter a brief note (required for general accommodations).'); return; }
@@ -1386,8 +1308,6 @@
   });
 
   function markLastMinute(agentId) {
-    // Toggles the "late request" flag on whatever accommodation is already set.
-    // Select the accommodation type first, then click ⚡ Late to flag it.
     if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
     const o = state.overrides[selectedDate][agentId] || {};
     const wasLate = !!o.lateRequest;
@@ -1396,39 +1316,11 @@
       return;
     }
     state.overrides[selectedDate][agentId] = { ...o, lateRequest: !wasLate, ts: new Date().toISOString() };
-    // Update the matching submission record's lateRequest flag if it exists
     const sub = state.submissions.slice().reverse().find(s =>
       s.agent_name === state.agents.find(a => a.id === agentId)?.name &&
       s.request_date === selectedDate
     );
     if (sub) sub.manualLastMinute = !wasLate;
-    saveState(); render();
-  }
-
-  function setManualOverride(agentId, status) {
-    const agent = state.agents.find(a => a.id === agentId);
-    if (!state.overrides[selectedDate]) state.overrides[selectedDate] = {};
-    const o = state.overrides[selectedDate][agentId] || {};
-    if (LEAVE_TYPES.includes(status)) {
-      state.overrides[selectedDate][agentId] = { ...o, leaveType: status, ts: new Date().toISOString() };
-    } else {
-      // accom or extra_hours_wfh
-      if (status === 'extra_hours_wfh') {
-        const balance = balanceForAgent(agent.name);
-        const wasExtra = accomForDate(agent, selectedDate) === 'extra_hours_wfh';
-        if (!wasExtra && balance < 1) { alert(`${agent.name} has no Extra Hours credits.`); return; }
-        if (!wasExtra) addLocalLedgerEntry(agent.name, 'redeem', { credits:1, note:'Manual override redemption' });
-      }
-      const prevAccom = accomForDate(agent, selectedDate);
-      state.overrides[selectedDate][agentId] = { ...o, accomType: status, source: 'manual', ts: new Date().toISOString() };
-      if (ACCOM_TYPES.includes(status) && prevAccom !== status) {
-        state.submissions.push({
-          id: 'sup-' + uid(), agent_name: agent.name, agent_supervisor: agent.supervisor||'',
-          request_type: status, request_date: selectedDate,
-          created_at: new Date().toISOString(), status: 'approved', submitted_by: 'supervisor'
-        });
-      }
-    }
     saveState(); render();
   }
 
@@ -1444,9 +1336,7 @@
     const o = state.overrides[selectedDate]?.[agentId];
     if (!o) return;
     delete o.accomType; delete o.accomNote;
-    // Also clear legacy type if it was an accom type
     if (o.type && (ACCOM_TYPES.includes(o.type) || o.type === 'extra_hours_wfh')) delete o.type;
-    // If nothing left, remove the override entirely
     if (!o.leaveType && !o.type && !o.accomType) {
       delete state.overrides[selectedDate][agentId];
       if (Object.keys(state.overrides[selectedDate]).length === 0) delete state.overrides[selectedDate];
@@ -1458,7 +1348,6 @@
     const o = state.overrides[selectedDate]?.[agentId];
     if (!o) return;
     delete o.leaveType;
-    // Also clear legacy type if it was a leave type
     if (o.type && LEAVE_TYPES.includes(o.type)) delete o.type;
     if (!o.leaveType && !o.type && !o.accomType) {
       delete state.overrides[selectedDate][agentId];
@@ -1475,49 +1364,67 @@
   }
 
   // ---- Extra Hours balance ----
-  // FIX: Robust null-safe math — never produces NaN
+  // PRIMARY source: state.localLedger (written synchronously on every earn/redeem).
+  // FALLBACK: ledgerEntries from Supabase (used only if no local data exists — legacy path).
+  // This ensures balances are always correct without depending on async Supabase fetch.
   function balanceForAgent(name) {
     const today = todayISO();
     const expired = today > state.settings.extraExpiry;
     let bal = 0;
-    ledgerEntries.filter(e => e.agent_name === name).forEach(e => {
-      const credits = Number(e.credits) || 0;
-      const hours = Number(e.hours) || 0;
+    const local = (state.localLedger || []).filter(e => e.agent_name === name);
+
+    if (local.length > 0) {
+      // Use local ledger as primary (always up to date)
       const hoursPerCredit = state.settings.hoursPerCredit || 4;
-      if (e.entry_type === 'earn') {
-        if (!expired) bal += credits > 0 ? credits : hours / hoursPerCredit;
-      } else if (e.entry_type === 'redeem') {
-        bal -= credits > 0 ? credits : 1;
-      } else if (e.entry_type === 'adjustment') {
-        bal += credits;
-      }
-    });
-    // Also count local ledger entries (for offline/no-Supabase use)
-    (state.localLedger || []).filter(e => e.agent_name === name).forEach(e => {
-      if (e.entry_type === 'earn') {
-        if (!expired) bal += Number(e.credits) || 0;
-      } else if (e.entry_type === 'redeem') {
-        bal -= Number(e.credits) || 1;
-      } else if (e.entry_type === 'adjustment') {
-        bal += Number(e.credits) || 0;
-      }
-    });
+      local.forEach(e => {
+        if (e.entry_type === 'earn') {
+          if (!expired) {
+            // credits may be null on old entries — fall back to hours / hoursPerCredit
+            const c = Number(e.credits);
+            const h = Number(e.hours);
+            bal += (c > 0) ? c : (h > 0 ? h / hoursPerCredit : 0);
+          }
+        } else if (e.entry_type === 'redeem') {
+          bal -= Number(e.credits) || 1;
+        } else if (e.entry_type === 'adjustment') {
+          bal += Number(e.credits) || 0;
+        }
+      });
+    } else {
+      // Fallback to Supabase ledger (legacy / no local data yet)
+      ledgerEntries.filter(e => e.agent_name === name).forEach(e => {
+        const credits = Number(e.credits) || 0;
+        const hours = Number(e.hours) || 0;
+        const hoursPerCredit = state.settings.hoursPerCredit || 4;
+        if (e.entry_type === 'earn') {
+          if (!expired) bal += credits > 0 ? credits : hours / hoursPerCredit;
+        } else if (e.entry_type === 'redeem') {
+          bal -= credits > 0 ? credits : 1;
+        } else if (e.entry_type === 'adjustment') {
+          bal += credits;
+        }
+      });
+    }
     return Math.max(0, isNaN(bal) ? 0 : bal);
   }
 
-  // Local ledger for offline use
+  // Local ledger — always written, persists in localStorage, no Supabase dependency
   function addLocalLedgerEntry(agentName, entryType, opts={}) {
     if (!state.localLedger) state.localLedger = [];
     state.localLedger.push({
       id: uid(), agent_name: agentName, entry_type: entryType,
-      hours: opts.hours || null, credits: opts.credits || null,
+      hours: opts.hours || null,
+      credits: opts.credits != null ? opts.credits : (entryType === 'redeem' ? 1 : null),
       date_worked: opts.dateWorked || null, note: opts.note || null,
       created_at: new Date().toISOString()
     });
     saveState();
   }
 
+  // Always writes locally first, then mirrors to Supabase if connected.
+  // Balance reads from local so it's always accurate, even before Supabase responds.
   async function addLedgerEntry(agentName, entryType, opts={}) {
+    addLocalLedgerEntry(agentName, entryType, opts);
     if (supabase && supabaseConnected) {
       const { error, data } = await supabase.from('extra_hours_ledger').insert({
         agent_name: agentName, entry_type: entryType,
@@ -1529,8 +1436,6 @@
         note: opts.note || null,
       }).select();
       if (!error && data) ledgerEntries.unshift(...data);
-    } else {
-      addLocalLedgerEntry(agentName, entryType, opts);
     }
   }
 
@@ -1580,7 +1485,7 @@
       }
       if (r.request_type === 'extra_hours_wfh') {
         const balance = balanceForAgent(agent.name);
-        if (balance < 1) warnings += `<div class="req-warn danger">No Extra Hours credits available (balance: ${formatBalance(balance)}).</div>`;
+        if (balance < 1) warnings += `<div class="req-warn">No Extra Hours credits (balance: ${formatBalance(balance)}) — approving will override without deducting a credit.</div>`;
         else warnings += `<div class="req-warn ok">${formatBalance(balance)} credit(s) available — approval deducts 1.</div>`;
       }
       if (r.request_type === 'ot_claim') {
@@ -1591,7 +1496,6 @@
           l.agent_name === r.agent_name && r.request_date >= l.start_date && r.request_date <= l.end_date);
         if (leave) warnings += `<div class="req-warn danger">This date overlaps logged ${leave.leave_type.toUpperCase()} leave.</div>`;
       }
-      // FIX: show clear note for general accommodation
       if (r.request_type === 'accom_general' && r.reason)
         warnings += `<div class="req-warn ok">General accommodation note: ${escapeHtml(r.reason)}</div>`;
       if (lastMin) warnings += `<div class="req-warn">Last-minute submission (within 24h of requested date).</div>`;
@@ -1651,17 +1555,21 @@
     const req = pendingRequests.find(r => r.id === id); if (!req) return;
     const agent = state.agents.find(a => a.name === req.agent_name);
     if (!agent) { alert(`Agent "${req.agent_name}" not in roster. Add via Static Schedule.`); return; }
+
     if (req.request_type === 'ot_claim') {
-      const credits = (Number(req.ot_hours)||0) / (state.settings.hoursPerCredit||4);
+      const hoursPerCredit = state.settings.hoursPerCredit || 4;
+      const credits = (Number(req.ot_hours)||0) / hoursPerCredit;
       await addLedgerEntry(req.agent_name, 'earn', {
         hours: req.ot_hours, credits, dateWorked: req.request_date, requestId: req.id, note: req.ot_purpose||''
       });
     } else if (req.request_type === 'extra_hours_wfh') {
       const balance = balanceForAgent(agent.name);
-      if (balance < 1) { alert('No Extra Hours credits available.'); return; }
-      await addLedgerEntry(req.agent_name, 'redeem', {
-        credits:1, dateWorked: req.request_date, requestId: req.id, note:'Redeemed via approved request'
-      });
+      if (balance >= 1) {
+        await addLedgerEntry(req.agent_name, 'redeem', {
+          credits:1, dateWorked: req.request_date, requestId: req.id, note:'Redeemed via approved request'
+        });
+      }
+      // If balance is 0, allow supervisor to approve anyway (no deduction)
       if (!state.overrides[req.request_date]) state.overrides[req.request_date] = {};
       const existO2 = state.overrides[req.request_date][agent.id] || {};
       state.overrides[req.request_date][agent.id] = { ...existO2, accomType:'extra_hours_wfh', source:'request', requestId:req.id };
@@ -1675,13 +1583,23 @@
       };
       saveState();
     }
+
     if (supabase && supabaseConnected) {
       const { error } = await supabase.from('requests').update({
         status:'approved', decided_by:'supervisor', decided_at: new Date().toISOString()
       }).eq('id', id);
       if (error) alert('Approved locally but Supabase update failed: ' + error.message);
     }
-    await fetchAllSupabase();
+
+    // Immediately reflect in Daily Status — switch tab + set date to the approved request's date
+    selectedDate = req.request_date;
+    activeTab = 'daily';
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === 'daily'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-daily'));
+    renderDaily();
+
+    // Background sync — updates pending list and badge without blocking the UI
+    fetchAllSupabase();
   }
 
   async function denyRequest(id) {
@@ -1695,7 +1613,6 @@
   }
 
   // ============== BULK LEAVE ENTRY ==============
-  // FIX: All leave operations now fully local — no Supabase required
   function renderLeave() {
     const sel = document.getElementById('leaveAgent');
     sel.innerHTML = state.agents.slice().sort((a,b) => a.name.localeCompare(b.name))
@@ -1733,13 +1650,10 @@
     const note = document.getElementById('leaveNote').value.trim();
     if (!agent || !start || !end || start > end) { alert('Pick a valid agent and date range.'); return; }
     if (!state.manualLeaves) state.manualLeaves = [];
-    // Remove any single-day overrides for this agent in this range so leave takes priority
-    const leaveEntry = { id: uid(), agent_name: agent, leave_type: type, start_date: start, end_date: end, note: note||null };
-    state.manualLeaves.push(leaveEntry);
+    state.manualLeaves.push({ id: uid(), agent_name: agent, leave_type: type, start_date: start, end_date: end, note: note||null });
     document.getElementById('leaveNote').value = '';
     saveState();
     renderLeaveList();
-    // Re-render daily if we're on the daily tab
     if (activeTab === 'daily') render();
   }
 
@@ -1861,7 +1775,6 @@
       if (date<fromISO||date>toISO) return;
       const o = state.overrides[date][agent.id];
       if (!o) return;
-      // support new accomType and legacy type field
       const t = o.accomType || (ACCOM_TYPES.includes(o.type)||o.type==='extra_hours_wfh' ? o.type : null);
       if (t && counts[t] !== undefined) counts[t]++;
     });
@@ -1972,135 +1885,6 @@
       saveState();
     }
     openBankModal(name);
-  }
-
-  // ============== TRENDS ==============
-  function renderTrends() {
-    if (!trendFrom) trendFrom = addDays(todayISO(), -89);
-    if (!trendTo) trendTo = todayISO();
-    document.getElementById('trendFrom').value = trendFrom;
-    document.getElementById('trendTo').value = trendTo;
-    const days = [];
-    let d = trendFrom;
-    while (d <= trendTo) { days.push(d); d = addDays(d, 1); }
-    const leaveCounts = days.map(date => getManualLeaves().filter(l => date>=l.start_date && date<=l.end_date).length);
-    const userAccomTotals = state.agents.map(a => {
-      let total = 0;
-      Object.keys(state.overrides).forEach(date => {
-        if (date<trendFrom||date>trendTo) return;
-        const o = state.overrides[date][a.id];
-        const _t = o.accomType || o.type; if (o && ACCOM_TYPES.includes(_t)) total++;
-      });
-      return { agent:a, total };
-    }).filter(r=>r.total>0).sort((a,b)=>b.total-a.total);
-    const top5 = userAccomTotals.slice(0,5);
-    const lineColors = ['#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444'];
-    const weekLabels = [];
-    for (let i=0; i<days.length; i+=7) weekLabels.push(`Wk ${days[i].slice(5)}`);
-    const top5Datasets = top5.map((r,i) => ({
-      label: r.agent.name,
-      data: days.map(date => {
-        const o = state.overrides[date]?.[r.agent.id];
-        const _t2 = o && (o.accomType || o.type); return _t2 && ACCOM_TYPES.includes(_t2) ? 1 : 0;
-      }).reduce((acc,val,idx) => {
-        if (idx%7===0) acc.push(0);
-        acc[acc.length-1]+=val; return acc;
-      }, []),
-      borderColor: lineColors[i], backgroundColor:'transparent', tension:0.2, fill:false
-    }));
-    if (chartTrendAccom) chartTrendAccom.destroy();
-    const accomEl = document.getElementById('trendAccomChart');
-    if (top5.length===0) {
-      accomEl.parentElement.innerHTML = '<div class="empty">No accommodations in this period.</div>';
-    } else {
-      chartTrendAccom = new Chart(accomEl.getContext('2d'), {
-        type:'line', data:{ labels:weekLabels, datasets:top5Datasets },
-        options:{ responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{position:'bottom',labels:{font:{size:11}}} },
-          scales:{ x:{ticks:{font:{size:10},maxTicksLimit:12}},
-                   y:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Accommodations/week'}} } }
-      });
-    }
-    if (chartTrendLeave) chartTrendLeave.destroy();
-    chartTrendLeave = new Chart(document.getElementById('trendLeaveChart').getContext('2d'), {
-      type:'line', data:{ labels:days, datasets:[{ label:'Leave days', data:leaveCounts,
-        borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.15)', fill:true, tension:0.2 }] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-        scales:{ x:{ticks:{font:{size:10},maxTicksLimit:10}}, y:{beginAtZero:true,ticks:{precision:0}} } }
-    });
-    const hours=[]; for(let h=6;h<=20;h++) hours.push(h);
-    const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const dowOrder=[1,2,3,4,5,6,0];
-    const covDatasets = dowOrder.map((dowIdx,i) => ({
-      label: dowNames[dowIdx],
-      data: hours.map(h => {
-        let ts=0, tw=0;
-        days.forEach(date => {
-          if (new Date(date+'T00:00:00').getDay()!==dowIdx) return;
-          state.agents.forEach(a => {
-            const sh=SHIFT_HOURS[a.team]; if(!sh) return;
-            if(h<Math.floor(sh.start)||h>=Math.ceil(sh.end)) return;
-            if((a.schedule[dowIdx]||'off')==='off') return;
-            ts++;
-            const s=statusForDate(a,date);
-            if(!LEAVE_TYPES.includes(s)) tw++;
-          });
-        });
-        return ts===0?null:Math.round(100*tw/ts);
-      }),
-      borderColor:['#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#a855f7'][i],
-      backgroundColor:'transparent', tension:0.2, fill:false
-    }));
-    if (chartTrendCoverage) chartTrendCoverage.destroy();
-    chartTrendCoverage = new Chart(document.getElementById('trendCoverageChart').getContext('2d'), {
-      type:'line', data:{ labels:hours.map(formatHour), datasets:covDatasets },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},
-        scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}} }
-    });
-    const accomUserDetails = state.agents.map(a => {
-      const counts={accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0};
-      Object.keys(state.overrides).forEach(date => {
-        if(date<trendFrom||date>trendTo) return;
-        const o=state.overrides[date][a.id];
-        const _tt = o && (o.accomType || o.type); if(o && _tt && counts[_tt]!==undefined) counts[_tt]++;
-      });
-      const total=counts.accom_wfh+counts.accom_early+counts.accom_late+counts.accom_office_change+counts.accom_general;
-      return { name:a.name, supervisor:a.supervisor||'', team:a.team||'', ...counts, total };
-    }).filter(r=>r.total>0).sort((a,b)=>b.total-a.total).slice(0,12);
-    document.getElementById('topUsersTable').innerHTML = `
-      <thead><tr><th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">Office</th><th class="num">General</th><th class="num">Total</th></tr></thead>
-      <tbody>${accomUserDetails.length===0?'<tr><td colspan="8" class="empty">None.</td></tr>':
-        accomUserDetails.map(r => {
-          const flag=r.total>=5?'danger':r.total>=3?'warn':'ok';
-          return `<tr><td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td>
-            <td>${escapeHtml(r.supervisor)}</td>
-            <td class="num">${r.accom_wfh||''}</td><td class="num">${r.accom_early||''}</td>
-            <td class="num">${r.accom_late||''}</td><td class="num">${r.accom_office_change||''}</td>
-            <td class="num">${r.accom_general||''}</td>
-            <td class="num"><span class="pill ${flag}">${r.total}</span></td></tr>`;
-        }).join('')}</tbody>`;
-    const supervisorMap = {};
-    state.agents.forEach(a => {
-      const sup = a.supervisor||'Unassigned';
-      if (!supervisorMap[sup]) supervisorMap[sup]={teamSize:0,accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0,total:0};
-      supervisorMap[sup].teamSize++;
-      Object.keys(state.overrides).forEach(date => {
-        if(date<trendFrom||date>trendTo) return;
-        const o=state.overrides[date][a.id];
-        const _st = o && (o.accomType || o.type); if(o && ACCOM_TYPES.includes(_st)) { supervisorMap[sup][_st]++; supervisorMap[sup].total++; }
-      });
-    });
-    const supRows = Object.entries(supervisorMap).map(([name,c]) => ({
-      name, ...c, perAgent: c.teamSize===0?0:(c.total/c.teamSize).toFixed(1)
-    })).sort((a,b)=>b.total-a.total);
-    document.getElementById('supervisorBreakdownTable').innerHTML = `
-      <thead><tr><th>Supervisor</th><th class="num">Team</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">General</th><th class="num">Total</th><th class="num">Per agent</th></tr></thead>
-      <tbody>${supRows.map(r => `<tr><td><strong>${escapeHtml(r.name)}</strong></td>
-        <td class="num">${r.teamSize}</td>
-        <td class="num">${r.accom_wfh||''}</td><td class="num">${r.accom_early||''}</td>
-        <td class="num">${r.accom_late||''}</td><td class="num">${r.accom_general||''}</td>
-        <td class="num"><strong>${r.total}</strong></td><td class="num">${r.perAgent}</td></tr>`).join('')}</tbody>`;
   }
 
   // ============== SCHEDULE VIEW ==============
@@ -2226,7 +2010,7 @@
     let agents=state.agents.slice();
     if(covSupervisor) agents=agents.filter(a=>a.supervisor===covSupervisor);
     const slots=[];
-    for(let h=6;h<=20;h++){
+    for(let h=6;h<=19;h++){
       slots.push({value:h,label:`${String(h).padStart(2,'0')}:00`,onHour:true});
       if(h<20) slots.push({value:h+0.5,label:`${String(h).padStart(2,'0')}:30`,onHour:false});
     }
@@ -2333,7 +2117,6 @@
     if(activeTab==='leave')    renderLeave();
     if(activeTab==='usage')    renderUsage();
     if(activeTab==='bank')     renderBank();
-    if(activeTab==='trends')   renderTrends();
   }
 
   // ============== SCHEDULE EDITOR ==============
@@ -2435,7 +2218,6 @@
   document.getElementById('refreshPendingBtn').addEventListener('click',fetchAllSupabase);
   document.getElementById('pendingFilter').addEventListener('change',e=>{pendingFilter=e.target.value;render();});
   document.getElementById('pendingSupervisor').addEventListener('change',e=>{pendingSupervisorFilter=e.target.value;render();});
-  // FIX: addLeave now local-only, no Supabase call
   document.getElementById('addLeaveBtn').addEventListener('click',addLeave);
   document.getElementById('leaveListFilter').addEventListener('change',e=>{leaveListFilter=e.target.value;renderLeaveList();});
   document.getElementById('leaveTypeFilter').addEventListener('change',e=>{leaveTypeFilter=e.target.value;renderLeaveList();});
@@ -2450,10 +2232,6 @@
   document.getElementById('exportUsageBtn').addEventListener('click',exportUsageCSV);
   document.getElementById('bankSearch').addEventListener('input',e=>{bankSearch=e.target.value;renderBank();});
   document.getElementById('bankSupervisor').addEventListener('change',e=>{bankSupervisor=e.target.value;renderBank();});
-  document.getElementById('trendFrom').addEventListener('change',e=>{trendFrom=e.target.value;renderTrends();});
-  document.getElementById('trendTo').addEventListener('change',e=>{trendTo=e.target.value;renderTrends();});
-  document.getElementById('trendQuick30').addEventListener('click',()=>{trendFrom=addDays(todayISO(),-29);trendTo=todayISO();renderTrends();});
-  document.getElementById('trendQuick90').addEventListener('click',()=>{trendFrom=addDays(todayISO(),-89);trendTo=todayISO();renderTrends();});
   document.getElementById('editScheduleBtn').addEventListener('click',openScheduleModal);
   document.getElementById('addAgentBtn').addEventListener('click',addAgent);
   document.getElementById('settingsBtn').addEventListener('click',()=>{
@@ -2499,6 +2277,7 @@
           if(!state.settings) state.settings=defaultSettings();
           if(!Array.isArray(state.manualLeaves)) state.manualLeaves=[];
           if(!Array.isArray(state.submissions)) state.submissions=[];
+          if(!Array.isArray(state.localLedger)) state.localLedger=[];
           saveState(); render();
         } else alert('Invalid file.');
       } catch(err){ alert('Could not parse: '+err.message); }
