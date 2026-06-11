@@ -175,11 +175,11 @@
         <div class="row-2">
           <div>
             <label class="fl">Start time</label>
-            <input type="time" id="otStart" />
+            <input type="time" id="otStart" step="1800" />
           </div>
           <div>
             <label class="fl">End time</label>
-            <input type="time" id="otEnd" />
+            <input type="time" id="otEnd" step="1800" />
           </div>
         </div>
         <div style="font-size:12px; color:var(--muted); margin:6px 0">
@@ -239,34 +239,34 @@
   const supabase = configured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const AGENTS = [
-    { name:"Rosa Nuno", supervisor:"Angy", team:"6:00–2:30" },
-    { name:"Cristie Avant", supervisor:"Angy", team:"6:00–2:30" },
-    { name:"Amber Bailey", supervisor:"Angy", team:"6:00–2:30" },
-    { name:"Sam De Castro", supervisor:"Angy", team:"6:00–2:30" },
-    { name:"Rachel Dunlap", supervisor:"Angy", team:"6:00–2:30" },
-    { name:"Sarah Hajiali", supervisor:"Neyat", team:"6:00–2:30" },
-    { name:"Unaisa Aslam", supervisor:"Neyat", team:"6:00–2:30" },
-    { name:"Bo Repko", supervisor:"Neyat", team:"8:00–4:30" },
-    { name:"Asia Campbell", supervisor:"Neyat", team:"8:00–4:30" },
-    { name:"Preston Panetti", supervisor:"Neyat", team:"8:00–4:30" },
-    { name:"Michael Scott Chavez", supervisor:"Katie", team:"8:00–4:30" },
-    { name:"Andre Cordero", supervisor:"Katie", team:"8:00–4:30" },
-    { name:"Damian Doubrava", supervisor:"Katie", team:"8:00–4:30" },
-    { name:"Eri Dotson", supervisor:"Katie", team:"8:00–4:30" },
-    { name:"Bicky Purewal", supervisor:"Lauren", team:"11:30–8:00 (A)" },
-    { name:"Jessie Gregory", supervisor:"Lauren", team:"11:30–8:00 (A)" },
-    { name:"Enrico Davis", supervisor:"Lauren", team:"11:30–8:00 (A)" },
-    { name:"Blanca Berumen", supervisor:"Lauren", team:"11:30–8:00 (A)" },
-    { name:"Salia Kibibi", supervisor:"Katie", team:"11:30–8:00 (A)" },
-    { name:"Brianna Miller", supervisor:"Lauren", team:"11:30–8:00 (A)" },
-    { name:"Jada Brown", supervisor:"Katie", team:"11:30–8:00 (A)" },
-    { name:"Sarah Al-Obaidi", supervisor:"Ainsley", team:"11:30–8:00 (A)" },
-    { name:"Ariashe Lowery", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
-    { name:"Jeremy Carrillo", supervisor:"Lauren", team:"11:30–8:00 (B)" },
-    { name:"Taylor Amos", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
-    { name:"Bianca Young", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
-    { name:"Ramila Chaulagain", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
-    { name:"Vitria Pinkston", supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Rosa Nuno",            supervisor:"Angy",    team:"6:00–2:30" },
+    { name:"Cristie Avant",        supervisor:"Angy",    team:"6:00–2:30" },
+    { name:"Amber Bailey",         supervisor:"Angy",    team:"6:00–2:30" },
+    { name:"Sam De Castro",        supervisor:"Angy",    team:"6:00–2:30" },
+    { name:"Rachel Dunlap",        supervisor:"Angy",    team:"6:00–2:30" },
+    { name:"Sarah Hajiali",        supervisor:"Neyat",   team:"6:00–2:30" },
+    { name:"Unaisa Aslam",         supervisor:"Neyat",   team:"6:00–2:30" },
+    { name:"Bo Repko",             supervisor:"Neyat",   team:"8:00–4:30" },
+    { name:"Asia Campbell",        supervisor:"Neyat",   team:"8:00–4:30" },
+    { name:"Preston Panetti",      supervisor:"Neyat",   team:"8:00–4:30" },
+    { name:"Michael Scott Chavez", supervisor:"Katie",   team:"8:00–4:30" },
+    { name:"Andre Cordero",        supervisor:"Katie",   team:"8:00–4:30" },
+    { name:"Damian Doubrava",      supervisor:"Katie",   team:"8:00–4:30" },
+    { name:"Eri Dotson",           supervisor:"Katie",   team:"8:00–4:30" },
+    { name:"Bicky Purewal",        supervisor:"Lauren",  team:"11:30–8:00 (A)" },
+    { name:"Jessie Gregory",       supervisor:"Lauren",  team:"11:30–8:00 (A)" },
+    { name:"Enrico Davis",         supervisor:"Lauren",  team:"11:30–8:00 (A)" },
+    { name:"Blanca Berumen",       supervisor:"Lauren",  team:"11:30–8:00 (A)" },
+    { name:"Salia Kibibi",         supervisor:"Katie",   team:"11:30–8:00 (A)" },
+    { name:"Brianna Miller",       supervisor:"Lauren",  team:"11:30–8:00 (A)" },
+    { name:"Jada Brown",           supervisor:"Katie",   team:"11:30–8:00 (A)" },
+    { name:"Sarah Al-Obaidi",      supervisor:"Ainsley", team:"11:30–8:00 (A)" },
+    { name:"Ariashe Lowery",       supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Jeremy Carrillo",      supervisor:"Lauren",  team:"11:30–8:00 (B)" },
+    { name:"Taylor Amos",          supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Bianca Young",         supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Ramila Chaulagain",    supervisor:"Ainsley", team:"11:30–8:00 (B)" },
+    { name:"Vitria Pinkston",      supervisor:"Ainsley", team:"11:30–8:00 (B)" },
   ];
 
   const TYPE_LABEL = {
@@ -324,15 +324,15 @@
     updateRuleStatus();
   }));
 
-  // OT hours calc
+  // OT hours calc — snapped to nearest 0.5hr to match step="1800"
   function recalcOtHours(){
     const s=document.getElementById('otStart').value;
     const e=document.getElementById('otEnd').value;
     if(!s||!e){document.getElementById('otCalcHours').textContent='—';return null;}
     const[sh,sm]=s.split(':').map(Number); const[eh,em]=e.split(':').map(Number);
     let mins=(eh*60+em)-(sh*60+sm); if(mins<0) mins+=24*60;
-    const hrs=mins/60;
-    document.getElementById('otCalcHours').textContent=hrs.toFixed(2);
+    const hrs=Math.round((mins/60)*2)/2; // round to nearest 0.5
+    document.getElementById('otCalcHours').textContent=hrs%1===0?String(hrs):hrs.toFixed(1);
     return hrs;
   }
   document.getElementById('otStart').addEventListener('change',recalcOtHours);
@@ -466,7 +466,8 @@
       <div class="review-row"><div class="label">Type</div><div class="val">${TYPE_LABEL[row.request_type]||row.request_type}</div></div>
       <div class="review-row"><div class="label">Date</div><div class="val">${dateLabel}</div></div>`;
     if(row.request_type==='ot_claim'){
-      body+=`<div class="review-row"><div class="label">OT window</div><div class="val">${row.ot_start_time} – ${row.ot_end_time} (${row.ot_hours.toFixed(2)} hrs)</div></div>`;
+      const hrsDisplay=row.ot_hours%1===0?String(row.ot_hours):row.ot_hours.toFixed(1);
+      body+=`<div class="review-row"><div class="label">OT window</div><div class="val">${row.ot_start_time} – ${row.ot_end_time} (${hrsDisplay} hrs)</div></div>`;
       if(row.ot_purpose) body+=`<div class="review-row"><div class="label">Purpose</div><div class="val">${escapeHtml(row.ot_purpose)}</div></div>`;
       if(row.ot_pre_authorizer) body+=`<div class="review-row"><div class="label">Pre-auth by</div><div class="val">${escapeHtml(row.ot_pre_authorizer)}</div></div>`;
     } else {
@@ -524,39 +525,36 @@
     let items=data||[];
 
     // ---- Decision notifications ----
-    // Track which request IDs the agent has already seen as decided
-    const seenKey = `seenDecisions_${name}`;
-    const seen = new Set(JSON.parse(localStorage.getItem(seenKey)||'[]'));
-    const newlyDecided = items.filter(r =>
-      (r.status==='approved'||r.status==='denied') && !seen.has(r.id)
-    );
-    const banner = document.getElementById('decisionBanner');
-    if (newlyDecided.length > 0) {
-      const approved = newlyDecided.filter(r=>r.status==='approved');
-      const denied = newlyDecided.filter(r=>r.status==='denied');
-      let html = '';
-      approved.forEach(r => {
-        html += `<div style="background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+    const seenKey=`seenDecisions_${name}`;
+    const seen=new Set(JSON.parse(localStorage.getItem(seenKey)||'[]'));
+    const newlyDecided=items.filter(r=>(r.status==='approved'||r.status==='denied')&&!seen.has(r.id));
+    const banner=document.getElementById('decisionBanner');
+    if(newlyDecided.length>0){
+      const approved=newlyDecided.filter(r=>r.status==='approved');
+      const denied=newlyDecided.filter(r=>r.status==='denied');
+      let html='';
+      approved.forEach(r=>{
+        html+=`<div style="background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
           <div>✅ <strong>Approved:</strong> ${TYPE_LABEL[r.request_type]||r.request_type} on ${formatDate(r.request_date)}</div>
           <button data-dismiss="${r.id}" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#166534;padding:0;line-height:1;flex-shrink:0;">×</button>
         </div>`;
       });
-      denied.forEach(r => {
-        html += `<div style="background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      denied.forEach(r=>{
+        html+=`<div style="background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
           <div>❌ <strong>Denied:</strong> ${TYPE_LABEL[r.request_type]||r.request_type} on ${formatDate(r.request_date)}${r.decision_note?` — <em>${escapeHtml(r.decision_note)}</em>`:''}</div>
           <button data-dismiss="${r.id}" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#991b1b;padding:0;line-height:1;flex-shrink:0;">×</button>
         </div>`;
       });
-      banner.innerHTML = html;
-      banner.style.display = 'block';
-      banner.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', () => {
+      banner.innerHTML=html;
+      banner.style.display='block';
+      banner.querySelectorAll('[data-dismiss]').forEach(b=>b.addEventListener('click',()=>{
         seen.add(b.dataset.dismiss);
-        localStorage.setItem(seenKey, JSON.stringify([...seen]));
+        localStorage.setItem(seenKey,JSON.stringify([...seen]));
         b.closest('div[style]').remove();
-        if (!banner.querySelector('[data-dismiss]')) banner.style.display = 'none';
+        if(!banner.querySelector('[data-dismiss]')) banner.style.display='none';
       }));
     } else {
-      banner.style.display = 'none';
+      banner.style.display='none';
     }
 
     if(historyFilter==='pending') items=items.filter(r=>r.status==='pending');
@@ -588,8 +586,9 @@
   function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
   // Auto-poll for decision updates every 30s
-  if(supabase) {
+  if(supabase){
     setInterval(()=>{ if(agentSel.value) loadHistory(agentSel.value); }, 30000);
-  }</script>
+  }
+</script>
 </body>
 </html>
