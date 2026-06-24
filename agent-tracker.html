@@ -11,7 +11,7 @@
     --border:#e5e7eb; --primary:#2563eb; --primary-dark:#1d4ed8;
     --office:#10b981; --wfh:#3b82f6;
     --accom:#f59e0b; --accom-early:#8b5cf6; --accom-late:#ec4899; --accom-office:#06b6d4; --accom-general:#84cc16;
-    --extra:#14b8a6; --pto:#ef4444; --jiffy:#f97316; --halfjiffy:#fb923c; --unpaid:#a855f7; --off:#9ca3af;
+    --pto:#ef4444; --jiffy:#f97316; --halfjiffy:#fb923c; --unpaid:#a855f7; --off:#9ca3af;
     --warn:#b45309; --danger:#991b1b;
     --good:#16a34a; --ok:#ca8a04; --bad:#dc2626;
     --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
@@ -29,8 +29,6 @@
     color:var(--muted); border-bottom:2px solid transparent; user-select:none; white-space:nowrap; }
   .tab:hover { color:var(--text); }
   .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
-  .tab-badge { background:var(--pto); color:white; padding:1px 7px; border-radius:10px;
-    font-size:11px; font-weight:700; margin-left:4px; }
   .tab-panel { display:none; }
   .tab-panel.active { display:block; }
   .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;
@@ -46,9 +44,6 @@
   .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
   .btn-ghost:hover { background:#f9fafb; color:var(--text); }
   .btn-danger { background:#fef2f2; color:var(--pto); border:1px solid #fecaca; }
-  .btn-approve { padding:7px 14px; background:#dcfce7; color:#166534;
-    border:1px solid #86efac; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
-  .btn-approve:hover { background:#bbf7d0; }
   .toggle-group { display:inline-flex; gap:0; background:#f3f4f6; border-radius:6px; padding:2px; }
   .toggle-group button { padding:5px 12px; font-size:12px; background:transparent;
     color:var(--muted); border:none; border-radius:4px; }
@@ -60,7 +55,7 @@
   .stat .breakdown { margin-top:4px; font-size:10px; color:var(--muted); line-height:1.3; }
   .stat .breakdown b { color:var(--text); font-weight:600; }
   .stat.office{border-color:var(--office);}.stat.wfh{border-color:var(--wfh);}.stat.accom{border-color:var(--accom);}
-  .stat.extra{border-color:var(--extra);}.stat.pto{border-color:var(--pto);}.stat.jiffy{border-color:var(--jiffy);}
+  .stat.pto{border-color:var(--pto);}.stat.jiffy{border-color:var(--jiffy);}
   .stat.halfjiffy{border-color:var(--halfjiffy);}.stat.unpaid{border-color:var(--unpaid);}.stat.off{border-color:var(--off);}
   .stat.coverage{border-color:var(--good);}.stat.coverage.amber{border-color:var(--ok);}.stat.coverage.red{border-color:var(--bad);}
   .heatmap-card { background:white; border-radius:10px; box-shadow:var(--shadow); padding:14px 18px; margin-bottom:14px; }
@@ -81,18 +76,18 @@
     align-items:center; gap:10px; padding:9px 16px; border-bottom:1px solid #f3f4f6; }
   .agent-row:last-child{border-bottom:none;}.agent-row:hover{background:#fafbfc;}
   .agent-row.is-leave{background:#fef2f2;}.agent-row.is-accom{background:#fffbeb;}
-  .agent-row.is-extra{background:#f0fdfa;}.agent-row.is-off{opacity:0.55;}
+  .agent-row.is-off{opacity:0.55;}
   .agent-info .name { font-weight:600; font-size:14px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
   .agent-info .sub { font-size:11px; color:var(--muted); margin-top:1px; }
   .counter-chip { font-size:10px; padding:1px 6px; border-radius:10px; background:#f3f4f6; color:var(--muted); font-weight:600; }
-  .counter-chip.warn{background:#fef3c7;color:var(--warn);}.counter-chip.bank{background:#ccfbf1;color:#0f766e;}
+  .counter-chip.warn{background:#fef3c7;color:var(--warn);}
   .status-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
     border-radius:999px; font-size:11px; font-weight:600; color:white; white-space:nowrap; width:fit-content; }
   .status-pill.office{background:var(--office);}.status-pill.wfh{background:var(--wfh);}
   .status-pill.accom_wfh{background:var(--accom);}.status-pill.accom_early{background:var(--accom-early);}
   .status-pill.accom_late{background:var(--accom-late);}.status-pill.accom_office_change{background:var(--accom-office);}
   .status-pill.accom_general{background:var(--accom-general);color:#1a2332;}
-  .status-pill.extra_hours_wfh{background:var(--extra);}.status-pill.pto{background:var(--pto);}
+  .status-pill.pto{background:var(--pto);}
   .status-pill.jiffy_day{background:var(--jiffy);}.status-pill.half_jiffy{background:var(--halfjiffy);}
   .status-pill.unpaid{background:var(--unpaid);}.status-pill.off{background:var(--off);}
   .override-tag { font-size:10px; font-weight:700; text-transform:uppercase;
@@ -105,7 +100,6 @@
   .status-btn.active.accom_early{background:var(--accom-early);color:white;border-color:var(--accom-early);}
   .status-btn.active.accom_late{background:var(--accom-late);color:white;border-color:var(--accom-late);}
   .status-btn.active.accom_general{background:var(--accom-general);color:#1a2332;border-color:var(--accom-general);}
-  .status-btn.active.extra_hours_wfh{background:var(--extra);color:white;border-color:var(--extra);}
   .status-btn.active.pto{background:var(--pto);color:white;border-color:var(--pto);}
   .status-btn.active.jiffy_day{background:var(--jiffy);color:white;border-color:var(--jiffy);}
   .status-btn.active.half_jiffy{background:var(--halfjiffy);color:white;border-color:var(--halfjiffy);}
@@ -118,24 +112,6 @@
     border:1px dashed var(--border); border-radius:5px; cursor:pointer; }
   .reset-btn:hover{color:var(--text);border-color:var(--muted);}
   .leave-select:focus{outline:2px solid var(--primary);}
-  .request-card { background:white; border:1px solid var(--border); border-radius:10px;
-    padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); }
-  .request-card.type-ot_claim,.request-card.type-extra_hours_wfh{border-left:4px solid var(--extra);}
-  .request-card.type-accom_wfh,.request-card.type-accom_early,.request-card.type-accom_late,
-  .request-card.type-accom_office_change,.request-card.type-accom_general{border-left:4px solid var(--accom);}
-  .req-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;}
-  .req-info{flex:1;min-width:0;}.req-name{font-weight:600;font-size:15px;}.req-meta{font-size:12px;color:var(--muted);}
-  .req-type-row{display:flex;align-items:center;gap:8px;margin:6px 0 8px;flex-wrap:wrap;}
-  .req-pill{padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;color:white;}
-  .req-pill.accom_wfh,.req-pill.accom_early,.req-pill.accom_late,.req-pill.accom_office_change,.req-pill.accom_general{background:var(--accom);color:#1a2332;}
-  .req-pill.ot_claim,.req-pill.extra_hours_wfh{background:var(--extra);}
-  .req-warn{padding:8px 11px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:var(--warn);margin-bottom:8px;}
-  .req-warn.danger{background:#fee2e2;border-color:#fecaca;color:var(--danger);}
-  .req-warn.ok{background:#ccfbf1;border-color:#5eead4;color:#0f766e;}
-  .req-actions{display:flex;flex-direction:column;gap:6px;min-width:100px;}
-  .req-history{margin-top:24px;}
-  .req-history h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin:0 0 10px;}
-  .last-minute-flag{display:inline-block;background:#fee2e2;color:var(--danger);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-left:6px;}
   .report-card{background:white;border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px;}
   .report-card h2{margin:0 0 12px;font-size:15px;font-weight:600;}
   table.report{width:100%;border-collapse:collapse;font-size:13px;}
@@ -144,7 +120,7 @@
   td.num{text-align:right;font-variant-numeric:tabular-nums;}
   .pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:600;}
   .pill.warn{background:#fef3c7;color:var(--warn);}.pill.danger{background:#fee2e2;color:var(--pto);}
-  .pill.ok{background:#dcfce7;color:#166534;}.pill.bank{background:#ccfbf1;color:#0f766e;}
+  .pill.ok{background:#dcfce7;color:#166534;}
   .chart-container{position:relative;height:300px;margin-top:8px;}
   .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;}
   .modal-backdrop.show{display:flex;}
@@ -198,7 +174,7 @@
   .status-section-head .label{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--text);}
   .status-section-head .swatch{display:inline-block;width:8px;height:8px;border-radius:50%;}
   .status-section-head .swatch.s-office{background:var(--office);}.status-section-head .swatch.s-wfh{background:var(--wfh);}
-  .status-section-head .swatch.s-accom{background:var(--accom);}.status-section-head .swatch.s-extra{background:var(--extra);}
+  .status-section-head .swatch.s-accom{background:var(--accom);}
   .status-section-head .swatch.s-pto{background:var(--pto);}.status-section-head .swatch.s-jiffy{background:var(--jiffy);}
   .status-section-head .swatch.s-halfjiffy{background:var(--halfjiffy);}.status-section-head .swatch.s-unpaid{background:var(--unpaid);}
   .status-section-head .swatch.s-off{background:var(--off);}.status-section-head .count{font-size:11px;font-weight:700;color:var(--muted);}
@@ -206,10 +182,9 @@
   .agent-name-row{font-size:12px;padding:2px 6px;cursor:pointer;border-radius:3px;}
   .agent-name-row:hover{background:#f3f4f6;}.agent-name-row .tag{font-size:10px;color:var(--muted);margin-left:4px;}
   .day-card-empty{color:var(--muted);font-size:12px;padding:10px;text-align:center;}
-  .config-warn{background:#fef3c7;border:1px solid #fde68a;color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;}
-  .config-ok{background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;}
   .leave-list-item{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#f9fafb;border-radius:6px;margin-bottom:6px;font-size:13px;gap:10px;}
   .accom-note-modal{max-width:440px;}
+  .last-minute-flag{display:inline-block;background:#fee2e2;color:var(--danger);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-left:6px;}
   #syncIndicator{font-size:12px;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-weight:500;}
   #syncIndicator.synced{background:#dcfce7;color:#166534;}
   #syncIndicator.syncing{background:#fef3c7;color:#92400e;}
@@ -236,11 +211,11 @@
     <div class="tab active" data-tab="daily">Daily Status</div>
     <div class="tab" data-tab="monthly">Schedule</div>
     <div class="tab" data-tab="coverage">Coverage Heatmap</div>
-    <div class="tab" data-tab="pending">Pending Requests <span id="pendingBadge" class="tab-badge" style="display:none">0</span></div>
     <div class="tab" data-tab="leave">Time Off</div>
     <div class="tab" data-tab="usage">Accommodation Usage</div>
-    <div class="tab" data-tab="bank">Extra Hours Bank</div>
   </div>
+
+  <!-- DAILY STATUS -->
   <div class="tab-panel active" id="tab-daily">
     <div class="controls">
       <label>Date: <input type="date" id="datePicker" /></label>
@@ -272,6 +247,8 @@
     </div>
     <div id="dailyContainer"></div>
   </div>
+
+  <!-- SCHEDULE -->
   <div class="tab-panel" id="tab-monthly">
     <div class="controls">
       <label style="font-weight:600;color:var(--text)">View:</label>
@@ -295,6 +272,8 @@
     </div>
     <div class="sched-wrap"><div id="schedTable"></div></div>
   </div>
+
+  <!-- COVERAGE HEATMAP -->
   <div class="tab-panel" id="tab-coverage">
     <div class="controls">
       <label style="font-weight:600;color:var(--text)">View:</label>
@@ -310,24 +289,8 @@
     </div>
     <div id="covContainer"></div>
   </div>
-  <div class="tab-panel" id="tab-pending">
-    <div id="pendingConfigWarn" class="config-warn" style="display:none"><strong>Supabase not connected.</strong> Requests submitted via request.html won't appear here.</div>
-    <div id="pendingConfigOk" class="config-ok" style="display:none"><strong>✓ Connected to Supabase.</strong> Agent requests appear below in real time.</div>
-    <div class="controls">
-      <button class="btn-ghost" id="refreshPendingBtn">Refresh</button>
-      <span id="pendingStatus" style="font-size:13px;color:var(--muted)"></span>
-      <span style="flex:1"></span>
-      <label>Show:
-        <select id="pendingFilter">
-          <option value="pending" selected>Pending only</option>
-          <option value="all">Pending + recent decisions</option>
-        </select>
-      </label>
-      <label>Supervisor: <select id="pendingSupervisor"><option value="">All teams</option></select></label>
-    </div>
-    <div id="pendingList"></div>
-    <div class="req-history" id="pendingHistory"></div>
-  </div>
+
+  <!-- TIME OFF -->
   <div class="tab-panel" id="tab-leave">
     <div class="report-card">
       <h2>Enter PTO / Jiffy Day / Half Jiffy / Unpaid Leave</h2>
@@ -362,6 +325,8 @@
       <div id="leaveList"></div>
     </div>
   </div>
+
+  <!-- ACCOMMODATION USAGE -->
   <div class="tab-panel" id="tab-usage">
     <div class="controls">
       <label>From: <input type="date" id="usageFrom" /></label>
@@ -381,18 +346,9 @@
     </div>
     <div class="report-card"><h2>Detail — approved accommodations</h2><table class="report" id="usageTable"></table></div>
   </div>
-  <div class="tab-panel" id="tab-bank">
-    <div class="config-warn" style="background:#ccfbf1;border-color:#5eead4;color:#0f766e"><strong>How earning works:</strong> agents submit OT claims via request.html. When you approve here, credits are banked automatically.</div>
-    <div class="config-warn" style="background:#fef3c7;border-color:#fde68a;color:var(--warn)"><strong>Expiry policy:</strong> all earned Extra Hours credits expire <strong>December 31, 2026</strong>.</div>
-    <div class="controls">
-      <label>Search: <input type="text" id="bankSearch" placeholder="Filter by name…" /></label>
-      <label>Supervisor: <select id="bankSupervisor"><option value="">All</option></select></label>
-    </div>
-    <div class="report-card"><table class="report" id="bankTable"></table></div>
-  </div>
 </div>
 
-<!-- Modals -->
+<!-- MODALS -->
 <div class="modal-backdrop" id="scheduleModal">
   <div class="modal" style="max-width:800px">
     <div class="modal-head"><h2>Static Weekly Schedule</h2><button class="modal-close" data-close-modal>×</button></div>
@@ -415,11 +371,8 @@
       <label style="display:block;margin-bottom:14px">
         <div class="form-label">Max Accommodation WFH per week per agent</div>
         <input type="number" id="settingFlexLimit" min="0" max="7" style="width:80px" />
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">Per-agent guardrail. Supervisors can still approve beyond this.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Per-agent guardrail.</div>
       </label>
-      <label style="display:block;margin-bottom:14px"><div class="form-label">Hours per Extra Hours WFH credit</div><input type="number" id="settingHoursPerCredit" min="1" max="40" style="width:80px" /></label>
-      <label style="display:block;margin-bottom:14px"><div class="form-label">OT claim cutoff (days from date worked)</div><input type="number" id="settingOtCutoff" min="1" max="60" style="width:80px" /></label>
-      <label style="display:block;margin-bottom:14px"><div class="form-label">Extra Hours expiry date</div><input type="date" id="settingExtraExpiry" style="width:160px" /></label>
       <label style="display:block;margin-bottom:14px">
         <div class="form-label">Coverage targets (%) — green / amber thresholds</div>
         <div style="display:flex;gap:8px;align-items:center">≥ <input type="number" id="settingCovGreen" min="0" max="100" style="width:60px" />% green, ≥ <input type="number" id="settingCovAmber" min="0" max="100" style="width:60px" />% amber, else red</div>
@@ -433,12 +386,6 @@
   <div class="modal" style="max-width:640px">
     <div class="modal-head"><h2 id="covDetailTitle">Staffing detail</h2><button class="modal-close" data-close-modal>×</button></div>
     <div class="modal-body" id="covDetailBody"></div>
-  </div>
-</div>
-<div class="modal-backdrop" id="bankModal">
-  <div class="modal" style="max-width:640px">
-    <div class="modal-head"><h2 id="bankModalTitle">Extra Hours Ledger</h2><button class="modal-close" data-close-modal>×</button></div>
-    <div class="modal-body" id="bankModalBody"></div>
   </div>
 </div>
 <div class="modal-backdrop" id="accomNoteModal">
@@ -456,19 +403,15 @@
 <script type="module">
   const SUPABASE_URL = 'https://kjaoapqungpjeowwhegj.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_IXMlfV41W0hFhPAcZokZHA_bQoC8QPT';
-
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // ---- Sync indicator ----
   const syncEl = document.getElementById('syncIndicator');
   function setSyncing() { syncEl.className='syncing'; syncEl.innerHTML='<span class="spin">↻</span> Saving…'; }
   function setSynced()  { syncEl.className='synced';  syncEl.textContent='✓ Synced'; }
   function setSyncError(msg) { syncEl.className='error'; syncEl.textContent='⚠ '+msg; }
 
   const STORAGE_KEY = 'agentTracker.v5';
-  const DEFAULT_EXTRA_EXPIRY = '2026-12-31';
-
   const STATUSES = {
     office:              {label:'In Office',      short:'Office',       class:'office'},
     wfh:                 {label:'WFH',            short:'WFH',          class:'wfh'},
@@ -477,7 +420,6 @@
     accom_late:          {label:'Accom: Late',    short:'Accom Late',   class:'accom_late'},
     accom_office_change: {label:'Office swap',    short:'Office swap',  class:'accom_office_change'},
     accom_general:       {label:'Accom: General', short:'Accom General',class:'accom_general'},
-    extra_hours_wfh:     {label:'Extra Hrs WFH',  short:'Extra Hrs',    class:'extra_hours_wfh'},
     pto:                 {label:'PTO',            short:'PTO',          class:'pto'},
     jiffy_day:           {label:'Jiffy Day',      short:'Jiffy',        class:'jiffy_day'},
     half_jiffy:          {label:'Half Jiffy',     short:'½ Jiffy',      class:'half_jiffy'},
@@ -493,7 +435,6 @@
     "11:30–8:00 (A)": {start:11.5,end:20},
     "11:30–8:00 (B)": {start:11.5,end:20},
   };
-
   const SEED_AGENTS = [
     {name:"Rosa Nuno",            supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'office',2:'office',3:'office',4:'wfh',  5:'wfh',  6:'off',0:'off'}},
     {name:"Cristie Avant",        supervisor:"Angy",    team:"6:00–2:30",       schedule:{1:'wfh',  2:'wfh',  3:'office',4:'office',5:'office',6:'off',0:'off'}},
@@ -525,16 +466,12 @@
     {name:"Vitria Pinkston",      supervisor:"Ainsley", team:"11:30–8:00 (B)",  schedule:{1:'office',2:'off',  3:'office',4:'office',5:'wfh',  6:'wfh', 0:'off'}},
   ];
 
-  // ---- App state ----
   let state = null;
   let selectedDate = todayISO();
   let activeTab = 'daily';
   let viewMode = 'all', groupMode = 'team';
   let searchText = '', supervisorFilter = '';
-  let pendingRequests = [], ledgerEntries = [];
-  let pendingFilter = 'pending', pendingSupervisorFilter = '';
   let usageFrom, usageTo, usageSupervisor = '';
-  let bankSearch = '', bankSupervisor = '';
   let leaveListFilter = 'upcoming', leaveTypeFilter = '';
   let chartUsage;
   let schedPeriod = 'week', schedStart = todayISO(), schedSearch = '', schedSupervisor = '', schedSort = 'team';
@@ -545,12 +482,9 @@
 
   function uid()     { return Math.random().toString(36).slice(2,10); }
   function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-  function defaultSettings(){ return {flexLimitPerWeek:1,hoursPerCredit:4,otCutoffDays:14,coverageGreen:95,coverageAmber:85,weekStart:1,extraExpiry:DEFAULT_EXTRA_EXPIRY}; }
-  function defaultState(){ return {agents:SEED_AGENTS.map(a=>({id:uid(),...a,schedule:{...a.schedule}})),overrides:{},manualLeaves:[],submissions:[],localLedger:[],settings:defaultSettings()}; }
+  function defaultSettings(){ return {flexLimitPerWeek:1,coverageGreen:95,coverageAmber:85,weekStart:1}; }
+  function defaultState(){ return {agents:SEED_AGENTS.map(a=>({id:uid(),...a,schedule:{...a.schedule}})),overrides:{},manualLeaves:[],submissions:[],settings:defaultSettings()}; }
 
-  // ============================================================
-  // SHARED STATE  —  Supabase as source of truth
-  // ============================================================
   async function loadState() {
     try {
       const {data,error} = await supabase.from('tracker_state').select('data,updated_at').eq('id','main').single();
@@ -562,14 +496,11 @@
         if (!s.overrides)                   s.overrides = {};
         if (!Array.isArray(s.submissions))  s.submissions = [];
         if (!Array.isArray(s.manualLeaves)) s.manualLeaves = [];
-        if (!Array.isArray(s.localLedger))  s.localLedger = [];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
         setSynced();
         return s;
       }
     } catch(e) { console.warn('Supabase load failed, falling back to localStorage:', e); }
-
-    // Fallback: localStorage cache
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -580,7 +511,6 @@
           if (!s.overrides)                   s.overrides = {};
           if (!Array.isArray(s.submissions))  s.submissions = [];
           if (!Array.isArray(s.manualLeaves)) s.manualLeaves = [];
-          if (!Array.isArray(s.localLedger))  s.localLedger = [];
           setSyncError('Offline — showing cached data');
           return s;
         }
@@ -590,7 +520,7 @@
   }
 
   async function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // instant local write
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     if (isSaving) return;
     isSaving = true;
     setSyncing();
@@ -598,7 +528,7 @@
       const {error} = await supabase.from('tracker_state')
         .upsert({id:'main', data:state, updated_at:new Date().toISOString()});
       if (error) { setSyncError('Save failed'); console.error(error); }
-      else { lastRemoteUpdatedAt = null; setSynced(); } // null forces next poll to re-read timestamp
+      else { lastRemoteUpdatedAt = null; setSynced(); }
     } catch(e) { setSyncError('Save failed'); console.error(e); }
     finally { isSaving = false; }
   }
@@ -616,67 +546,30 @@
           if (!state.overrides)               state.overrides = {};
           if (!Array.isArray(state.submissions))  state.submissions = [];
           if (!Array.isArray(state.manualLeaves)) state.manualLeaves = [];
-          if (!Array.isArray(state.localLedger))  state.localLedger = [];
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
           setSynced();
           render();
         }
       }
-    } catch(e) { /* silent fail on poll */ }
+    } catch(e) {}
   }
-  // ============================================================
 
   function escapeHtml(s)  { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function escapeAttr(s)  { return escapeHtml(s); }
-  function formatBalance(b){ if(b===null||b===undefined||isNaN(b)) return '0'; if(Number.isInteger(b)) return b; return b.toFixed(2).replace(/\.?0+$/,''); }
   function isoFromDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
   function addDays(dateISO,n){ const d=new Date(dateISO+'T00:00:00'); d.setDate(d.getDate()+n); return isoFromDate(d); }
   function startOfWeek(dateISO){ const d=new Date(dateISO+'T00:00:00'); const ws=state.settings.weekStart; const diff=(d.getDay()-ws+7)%7; d.setDate(d.getDate()-diff); return isoFromDate(d); }
   function endOfWeek(dateISO)  { const s=new Date(startOfWeek(dateISO)+'T00:00:00'); s.setDate(s.getDate()+6); return isoFromDate(s); }
   function formatHour(h)  { const ap=h<12?'a':'p'; const h12=h===0?12:h>12?h-12:h; return `${h12}${ap}`; }
   function timeAgo(iso)   { if(!iso) return ''; const diff=(Date.now()-new Date(iso).getTime())/1000; if(diff<60)return 'just now'; if(diff<3600)return `${Math.floor(diff/60)}m ago`; if(diff<86400)return `${Math.floor(diff/3600)}h ago`; return `${Math.floor(diff/86400)}d ago`; }
-
   function getManualLeaves() { return state.manualLeaves||[]; }
   function leaveForDate(agent,dateISO){ const ml=getManualLeaves().find(l=>l.agent_name===agent.name&&dateISO>=l.start_date&&dateISO<=l.end_date); if(ml) return ml.leave_type; const o=state.overrides[dateISO]?.[agent.id]; if(o?.leaveType) return o.leaveType; if(o?.type&&LEAVE_TYPES.includes(o.type)) return o.type; return null; }
-  function accomForDate(agent,dateISO){ const o=state.overrides[dateISO]?.[agent.id]; if(o?.accomType) return o.accomType; if(o?.type&&(ACCOM_TYPES.includes(o.type)||o.type==='extra_hours_wfh')) return o.type; return null; }
+  function accomForDate(agent,dateISO){ const o=state.overrides[dateISO]?.[agent.id]; if(o?.accomType) return o.accomType; if(o?.type&&ACCOM_TYPES.includes(o.type)) return o.type; return null; }
   function statusForDate(agent,dateISO){ const leave=leaveForDate(agent,dateISO); const accom=accomForDate(agent,dateISO); if(leave==='half_jiffy'&&accom) return accom; if(leave) return leave; if(accom) return accom; const dow=new Date(dateISO+'T00:00:00').getDay(); return agent.schedule[dow]||'off'; }
   function isLastMinuteRequest(r){ if(!r) return false; if(r.manualLastMinute===true) return true; if(!r.created_at||!r.request_date) return false; return (new Date(r.request_date+'T23:59:59')-new Date(r.created_at))<=24*3600*1000; }
 
-  function balanceForAgent(name){
-    const today=todayISO(); const expired=today>state.settings.extraExpiry; let bal=0;
-    const local=(state.localLedger||[]).filter(e=>e.agent_name===name);
-    if(local.length>0){ const hpc=state.settings.hoursPerCredit||4;
-      local.forEach(e=>{ if(e.entry_type==='earn'){ if(!expired){ const c=Number(e.credits),h=Number(e.hours); bal+=(c>0)?c:(h>0?h/hpc:0); }} else if(e.entry_type==='redeem') bal-=Number(e.credits)||1; else if(e.entry_type==='adjustment') bal+=Number(e.credits)||0; });
-    } else { ledgerEntries.filter(e=>e.agent_name===name).forEach(e=>{ const c=Number(e.credits)||0,h=Number(e.hours)||0,hpc=state.settings.hoursPerCredit||4; if(e.entry_type==='earn'){if(!expired) bal+=c>0?c:h/hpc;} else if(e.entry_type==='redeem') bal-=c>0?c:1; else if(e.entry_type==='adjustment') bal+=c; }); }
-    return Math.max(0,isNaN(bal)?0:bal);
-  }
-
-  function addLocalLedgerEntry(agentName,entryType,opts={}){
-    if(!state.localLedger) state.localLedger=[];
-    state.localLedger.push({id:uid(),agent_name:agentName,entry_type:entryType,hours:opts.hours||null,credits:opts.credits!=null?opts.credits:(entryType==='redeem'?1:null),date_worked:opts.dateWorked||null,note:opts.note||null,created_at:new Date().toISOString()});
-    saveState();
-  }
-  async function addLedgerEntry(agentName,entryType,opts={}){
-    addLocalLedgerEntry(agentName,entryType,opts);
-    try{ const{error,data}=await supabase.from('extra_hours_ledger').insert({agent_name:agentName,entry_type:entryType,hours:opts.hours||null,credits:opts.credits!=null?opts.credits:(entryType==='redeem'?1:null),date_worked:opts.dateWorked||null,source_request_id:opts.requestId||null,approved_by:opts.approvedBy||'supervisor',note:opts.note||null}).select(); if(!error&&data) ledgerEntries.unshift(...data); } catch(e){}
-  }
-
-  // ---- Supabase requests + ledger fetch ----
-  async function fetchAllSupabase(){
-    try{
-      const[{data:reqs,error:reqErr},{data:ledger}]=await Promise.all([
-        supabase.from('requests').select('*').order('created_at',{ascending:true}),
-        supabase.from('extra_hours_ledger').select('*').order('created_at',{ascending:false}),
-      ]);
-      if(!reqErr){ pendingRequests=reqs||[]; ledgerEntries=ledger||[]; document.getElementById('pendingConfigWarn').style.display='none'; document.getElementById('pendingConfigOk').style.display='block'; }
-    } catch(e){ document.getElementById('pendingConfigWarn').style.display='block'; }
-    updatePendingBadge(); render();
-  }
-  function updatePendingBadge(){ const n=pendingRequests.filter(r=>r.status==='pending').length; const b=document.getElementById('pendingBadge'); if(n>0){b.style.display='inline-block';b.textContent=n;}else b.style.display='none'; }
-
-  // ---- Render helpers ----
   function populateSelect(id,value){ const sel=document.getElementById(id); if(!sel) return; const sups=[...new Set(state.agents.map(a=>a.supervisor).filter(Boolean))].sort(); sel.innerHTML='<option value="">All</option>'+sups.map(s=>`<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join(''); sel.value=value||''; }
-  function filteredAgents(){ return state.agents.filter(a=>{ if(searchText&&!a.name.toLowerCase().includes(searchText.toLowerCase())) return false; if(supervisorFilter&&a.supervisor!==supervisorFilter) return false; if(viewMode!=='all'){ const s=statusForDate(a,selectedDate); if(viewMode==='office'&&!['office','accom_office_change'].includes(s)) return false; if(viewMode==='wfh'&&!['wfh','accom_wfh','accom_early','accom_late','accom_general','extra_hours_wfh'].includes(s)) return false; } return true; }); }
+  function filteredAgents(){ return state.agents.filter(a=>{ if(searchText&&!a.name.toLowerCase().includes(searchText.toLowerCase())) return false; if(supervisorFilter&&a.supervisor!==supervisorFilter) return false; if(viewMode!=='all'){ const s=statusForDate(a,selectedDate); if(viewMode==='office'&&!['office','accom_office_change'].includes(s)) return false; if(viewMode==='wfh'&&!['wfh','accom_wfh','accom_early','accom_late','accom_general'].includes(s)) return false; } return true; }); }
   function countByStatus(arr,dateISO){ const c={}; Object.keys(STATUSES).forEach(k=>c[k]=0); arr.forEach(a=>{const s=statusForDate(a,dateISO);if(c[s]!==undefined)c[s]++;}); return c; }
 
   // ---- Daily ----
@@ -689,7 +582,7 @@
   }
 
   function renderSummary(){
-    const counts={office:0,wfh:0,accom:0,accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0,extra_hours_wfh:0,pto:0,jiffy_day:0,half_jiffy:0,unpaid:0,off:0};
+    const counts={office:0,wfh:0,accom:0,accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0,pto:0,jiffy_day:0,half_jiffy:0,unpaid:0,off:0};
     const visible=state.agents.filter(a=>{if(searchText&&!a.name.toLowerCase().includes(searchText.toLowerCase())) return false; if(supervisorFilter&&a.supervisor!==supervisorFilter) return false; return true;});
     visible.forEach(a=>{
       const leave=leaveForDate(a,selectedDate); const accom=accomForDate(a,selectedDate); const s=statusForDate(a,selectedDate);
@@ -708,15 +601,14 @@
     const accomBreakdown=[counts.accom_wfh?`<b>${counts.accom_wfh}</b> WFH`:'',counts.accom_early?`<b>${counts.accom_early}</b> Early`:'',counts.accom_late?`<b>${counts.accom_late}</b> Late`:'',counts.accom_office_change?`<b>${counts.accom_office_change}</b> Office swap`:'',counts.accom_general?`<b>${counts.accom_general}</b> General`:''].filter(Boolean).join(' · ');
     document.getElementById('summary').innerHTML=[
       {key:'office',   label:'In Office',       value:counts.office},
-      {key:'wfh',      label:'Regular WFH',     value:counts.wfh,            sub:'From schedule'},
-      {key:'accom',    label:'Accommodations',  value:counts.accom,          breakdown:accomBreakdown},
-      {key:'extra',    label:'Extra Hrs WFH',   value:counts.extra_hours_wfh,sub:'Redeemed credits'},
+      {key:'wfh',      label:'Regular WFH',     value:counts.wfh,      sub:'From schedule'},
+      {key:'accom',    label:'Accommodations',  value:counts.accom,    breakdown:accomBreakdown},
       {key:'pto',      label:'PTO',             value:counts.pto},
       {key:'jiffy',    label:'Jiffy Days',      value:counts.jiffy_day},
-      {key:'halfjiffy',label:'Half Jiffy',      value:counts.half_jiffy,     sub:'0.5 day each'},
+      {key:'halfjiffy',label:'Half Jiffy',      value:counts.half_jiffy,sub:'0.5 day each'},
       {key:'unpaid',   label:'Unpaid',          value:counts.unpaid},
       {key:'off',      label:'Day Off',         value:counts.off},
-      {key:'coverage', label:'Staffing Coverage',value:coveragePct+'%',     sub:`${working}/${scheduled} working`,extraClass:cls},
+      {key:'coverage', label:'Staffing Coverage',value:coveragePct+'%', sub:`${working}/${scheduled} working`,extraClass:cls},
     ].map(c=>`<div class="stat ${c.key} ${c.extraClass||''}"><div class="label">${c.label}</div><div class="value">${c.value}</div>${c.breakdown?`<div class="breakdown">${c.breakdown}</div>`:''}${c.sub?`<div class="breakdown">${c.sub}</div>`:''}</div>`).join('');
   }
 
@@ -745,15 +637,14 @@
       const c=countByStatus(arr,selectedDate);
       const accomTotal=ACCOM_TYPES.reduce((s,t)=>s+(c[t]||0),0);
       const chips=[];
-      if(c.office)          chips.push(`<span class="count-chip" style="background:#ecfdf5;color:#065f46">🏢 ${c.office} Office</span>`);
-      if(c.wfh)             chips.push(`<span class="count-chip" style="background:#eff6ff;color:#1e40af">🏠 ${c.wfh} WFH</span>`);
-      if(accomTotal)        chips.push(`<span class="count-chip" style="background:#fef3c7;color:#92400e">⚡ ${accomTotal} Accom</span>`);
-      if(c.extra_hours_wfh) chips.push(`<span class="count-chip" style="background:#ccfbf1;color:#0f766e">🎁 ${c.extra_hours_wfh} Extra</span>`);
-      if(c.pto)             chips.push(`<span class="count-chip" style="background:#fee2e2;color:#991b1b">🌴 ${c.pto} PTO</span>`);
-      if(c.jiffy_day)       chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">J ${c.jiffy_day}</span>`);
-      if(c.half_jiffy)      chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">½J ${c.half_jiffy}</span>`);
-      if(c.unpaid)          chips.push(`<span class="count-chip" style="background:#f3e8ff;color:#6b21a8">U ${c.unpaid}</span>`);
-      if(c.off)             chips.push(`<span class="count-chip">— ${c.off} Off</span>`);
+      if(c.office)    chips.push(`<span class="count-chip" style="background:#ecfdf5;color:#065f46">🏢 ${c.office} Office</span>`);
+      if(c.wfh)       chips.push(`<span class="count-chip" style="background:#eff6ff;color:#1e40af">🏠 ${c.wfh} WFH</span>`);
+      if(accomTotal)  chips.push(`<span class="count-chip" style="background:#fef3c7;color:#92400e">⚡ ${accomTotal} Accom</span>`);
+      if(c.pto)       chips.push(`<span class="count-chip" style="background:#fee2e2;color:#991b1b">🌴 ${c.pto} PTO</span>`);
+      if(c.jiffy_day) chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">J ${c.jiffy_day}</span>`);
+      if(c.half_jiffy)chips.push(`<span class="count-chip" style="background:#ffedd5;color:#9a3412">½J ${c.half_jiffy}</span>`);
+      if(c.unpaid)    chips.push(`<span class="count-chip" style="background:#f3e8ff;color:#6b21a8">U ${c.unpaid}</span>`);
+      if(c.off)       chips.push(`<span class="count-chip">— ${c.off} Off</span>`);
       const sec=document.createElement('div'); sec.className='group-section';
       sec.innerHTML=`<div class="group-header"><div><h3>${groupMode==='team'?'Team ':' '}${escapeHtml(k)}</h3><div class="group-meta">${arr.length} agent${arr.length===1?'':'s'}</div></div><div class="group-counts">${chips.join('')}</div></div><div class="group-body"></div>`;
       const body=sec.querySelector('.group-body');
@@ -769,12 +660,11 @@
     const leave=leaveForDate(agent,selectedDate); const accom=accomForDate(agent,selectedDate);
     const hasCombo=leave==='half_jiffy'&&accom;
     const isLeave=!!leave; const isAccom=accom&&ACCOM_TYPES.includes(accom);
-    const isExtra=accom==='extra_hours_wfh'; const isDayOff=baseStatus==='off'&&!override&&!leave;
+    const isDayOff=baseStatus==='off'&&!override&&!leave;
     const wkStart=startOfWeek(selectedDate); const wkEnd=endOfWeek(selectedDate);
     let weekAccomWFH=0;
     Object.keys(state.overrides).forEach(date=>{ if(date<wkStart||date>wkEnd) return; const o=state.overrides[date][agent.id]; if(o?.accomType==='accom_wfh'||o?.type==='accom_wfh') weekAccomWFH++; });
     const flexAtLimit=weekAccomWFH>=state.settings.flexLimitPerWeek;
-    const balance=balanceForAgent(agent.name);
     const accomNote=(accom==='accom_general')?(override?.accomNote||override?.note||''):'';
     const curAccomType=accom||''; const curLeaveType=leave||'';
     const leaveInfo=leave?(STATUSES[leave]||STATUSES.off):null; const accomInfo=accom?(STATUSES[accom]||null):null;
@@ -785,19 +675,17 @@
     const hasOverride=override&&Object.keys(override).some(k=>k!=='ts'&&override[k]);
     const overrideTagHtml=hasOverride?'<span class="override-tag">Override</span>':(leave&&!override?'<span class="override-tag">Leave</span>':'');
     const accomNoteHtml=accomNote?` · <em style="color:var(--warn)">${escapeHtml(accomNote)}</em>`:'';
-    const extraBtnLowBal=(balance<1&&curAccomType!=='extra_hours_wfh');
     const clearLeaveBtnHtml=curLeaveType?`<button class="reset-btn" data-clear-leave="${agent.id}" title="Clear HR leave" style="padding:3px 6px;font-size:11px">✕</button>`:'';
     const resetAllHtml=(accom||leave)?`<button class="reset-btn" data-reset="${agent.id}" title="Clear all overrides">↺ All</button>`:'';
     const leaveSelectStyle=curLeaveType?'padding:4px 6px;font-size:11px;border-radius:5px;border:1px solid var(--border);background:#fff7ed;color:#9a3412;font-weight:700;height:28px;':'padding:4px 6px;font-size:11px;border-radius:5px;border:1px solid var(--border);background:white;color:var(--muted);height:28px;';
     const row=document.createElement('div');
-    row.className='agent-row'+(isLeave&&!hasCombo?' is-leave':'')+(hasCombo?' is-leave':'')+(isAccom?' is-accom':'')+(isExtra?' is-extra':'')+(isDayOff?' is-off':'');
-    row.innerHTML=`<div class="agent-info"><div class="name">${escapeHtml(agent.name)}<span class="counter-chip ${flexAtLimit?'warn':''}" title="Accom WFH used this week">A:${weekAccomWFH}/${state.settings.flexLimitPerWeek}</span><span class="counter-chip bank" title="Extra Hrs balance">🎁 ${formatBalance(balance)}</span></div><div class="sub">${escapeHtml(agent.supervisor||'')}${agent.supervisor&&agent.team?' · ':''}${escapeHtml(agent.team||'')}${accomNoteHtml}</div></div><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${statusPillsHtml}</div><div>${overrideTagHtml}</div><div class="status-buttons"><button class="status-btn lastmin-btn ${override?.lateRequest?'active':''}" data-lastmin="${agent.id}" title="Toggle late/last-minute">⚡ Late</button><button class="status-btn accom_wfh ${curAccomType==='accom_wfh'?'active':''}" data-agent="${agent.id}" data-accom="accom_wfh">WFH</button><button class="status-btn accom_early ${curAccomType==='accom_early'?'active':''}" data-agent="${agent.id}" data-accom="accom_early">Early</button><button class="status-btn accom_late ${curAccomType==='accom_late'?'active':''}" data-agent="${agent.id}" data-accom="accom_late">Late</button><button class="status-btn accom_general ${curAccomType==='accom_general'?'active':''}" data-agent="${agent.id}" data-accom="accom_general">General</button><button class="status-btn extra_hours_wfh ${curAccomType==='extra_hours_wfh'?'active':''}" data-agent="${agent.id}" data-accom="extra_hours_wfh"${extraBtnLowBal?' style="border-color:#f97316;color:#9a3412;" title="Balance 0 — supervisor override"':' title="Redeem 1 Extra Hrs credit"'}>🎁 Extra</button><span style="display:inline-flex;align-items:center;gap:3px;"><select class="leave-select" data-agent="${agent.id}" style="${leaveSelectStyle}"><option value="">HR leave…</option><option value="pto"${curLeaveType==='pto'?' selected':''}>PTO</option><option value="jiffy_day"${curLeaveType==='jiffy_day'?' selected':''}>Jiffy Day</option><option value="half_jiffy"${curLeaveType==='half_jiffy'?' selected':''}>Half Jiffy</option><option value="unpaid"${curLeaveType==='unpaid'?' selected':''}>Unpaid</option></select>${clearLeaveBtnHtml}</span>${resetAllHtml}</div>`;
+    row.className='agent-row'+(isLeave&&!hasCombo?' is-leave':'')+(hasCombo?' is-leave':'')+(isAccom?' is-accom':'')+(isDayOff?' is-off':'');
+    row.innerHTML=`<div class="agent-info"><div class="name">${escapeHtml(agent.name)}<span class="counter-chip ${flexAtLimit?'warn':''}" title="Accom WFH used this week">A:${weekAccomWFH}/${state.settings.flexLimitPerWeek}</span></div><div class="sub">${escapeHtml(agent.supervisor||'')}${agent.supervisor&&agent.team?' · ':''}${escapeHtml(agent.team||'')}${accomNoteHtml}</div></div><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${statusPillsHtml}</div><div>${overrideTagHtml}</div><div class="status-buttons"><button class="status-btn lastmin-btn ${override?.lateRequest?'active':''}" data-lastmin="${agent.id}" title="Toggle late/last-minute">⚡ Late</button><button class="status-btn accom_wfh ${curAccomType==='accom_wfh'?'active':''}" data-agent="${agent.id}" data-accom="accom_wfh">WFH</button><button class="status-btn accom_early ${curAccomType==='accom_early'?'active':''}" data-agent="${agent.id}" data-accom="accom_early">Early</button><button class="status-btn accom_late ${curAccomType==='accom_late'?'active':''}" data-agent="${agent.id}" data-accom="accom_late">Late</button><button class="status-btn accom_general ${curAccomType==='accom_general'?'active':''}" data-agent="${agent.id}" data-accom="accom_general">General</button><span style="display:inline-flex;align-items:center;gap:3px;"><select class="leave-select" data-agent="${agent.id}" style="${leaveSelectStyle}"><option value="">HR leave…</option><option value="pto"${curLeaveType==='pto'?' selected':''}>PTO</option><option value="jiffy_day"${curLeaveType==='jiffy_day'?' selected':''}>Jiffy Day</option><option value="half_jiffy"${curLeaveType==='half_jiffy'?' selected':''}>Half Jiffy</option><option value="unpaid"${curLeaveType==='unpaid'?' selected':''}>Unpaid</option></select>${clearLeaveBtnHtml}</span>${resetAllHtml}</div>`;
     row.querySelectorAll('[data-accom]').forEach(b=>b.addEventListener('click',()=>{
       const newAccom=b.dataset.accom; const curAccom=accomForDate(agent,selectedDate);
       if(newAccom==='accom_general'){ if(curAccom==='accom_general'){clearAccomOverride(agent.id);return;} pendingAccomGeneralAgentId=agent.id; const o=state.overrides[selectedDate]?.[agent.id]; document.getElementById('accomNoteInput').value=o?.accomNote||o?.note||''; document.getElementById('accomNoteModal').classList.add('show'); return; }
-      if(newAccom==='extra_hours_wfh'&&curAccom!=='extra_hours_wfh'&&balanceForAgent(agent.name)>=1) addLocalLedgerEntry(agent.name,'redeem',{credits:1,note:'Manual redemption'});
       if(curAccom===newAccom){clearAccomOverride(agent.id);}
-      else{ if(!state.overrides[selectedDate]) state.overrides[selectedDate]={}; const o=state.overrides[selectedDate][agent.id]||{}; state.overrides[selectedDate][agent.id]={...o,accomType:newAccom,ts:new Date().toISOString()}; if(ACCOM_TYPES.includes(newAccom)) state.submissions.push({id:'sup-'+uid(),agent_name:agent.name,agent_supervisor:agent.supervisor||'',request_type:newAccom,request_date:selectedDate,created_at:new Date().toISOString(),status:'approved',submitted_by:'supervisor',manualLastMinute:!!(state.overrides[selectedDate][agent.id]?.lateRequest)}); saveState();render(); }
+      else{ if(!state.overrides[selectedDate]) state.overrides[selectedDate]={}; const o=state.overrides[selectedDate][agent.id]||{}; state.overrides[selectedDate][agent.id]={...o,accomType:newAccom,ts:new Date().toISOString()}; state.submissions.push({id:'sup-'+uid(),agent_name:agent.name,agent_supervisor:agent.supervisor||'',request_type:newAccom,request_date:selectedDate,created_at:new Date().toISOString(),status:'approved',submitted_by:'supervisor',manualLastMinute:!!(state.overrides[selectedDate][agent.id]?.lateRequest)}); saveState();render(); }
     }));
     row.querySelectorAll('.leave-select').forEach(sel=>sel.addEventListener('change',()=>{ const nv=sel.value; if(!nv){clearLeaveOverride(agent.id);return;} state.manualLeaves=state.manualLeaves.filter(l=>!(l.agent_name===agent.name&&l.start_date===selectedDate&&l.end_date===selectedDate)); if(!state.overrides[selectedDate]) state.overrides[selectedDate]={}; const o=state.overrides[selectedDate][agent.id]||{}; state.overrides[selectedDate][agent.id]={...o,leaveType:nv,ts:new Date().toISOString()}; saveState();render(); }));
     row.querySelectorAll('[data-clear-leave]').forEach(b=>b.addEventListener('click',()=>clearLeaveOverride(agent.id)));
@@ -819,55 +707,9 @@
 
   function markLastMinute(agentId){ if(!state.overrides[selectedDate]) state.overrides[selectedDate]={}; const o=state.overrides[selectedDate][agentId]||{}; const wasLate=!!o.lateRequest; if(!wasLate&&!o.accomType&&!o.type){alert('Set an accommodation first.');return;} state.overrides[selectedDate][agentId]={...o,lateRequest:!wasLate,ts:new Date().toISOString()}; const sub=state.submissions.slice().reverse().find(s=>s.agent_name===state.agents.find(a=>a.id===agentId)?.name&&s.request_date===selectedDate); if(sub) sub.manualLastMinute=!wasLate; saveState();render(); }
   function clearOverride(agentId){ if(state.overrides[selectedDate]){delete state.overrides[selectedDate][agentId]; if(!Object.keys(state.overrides[selectedDate]).length) delete state.overrides[selectedDate];} saveState();render(); }
-  function clearAccomOverride(agentId){ const o=state.overrides[selectedDate]?.[agentId]; if(!o) return; delete o.accomType; delete o.accomNote; if(o.type&&(ACCOM_TYPES.includes(o.type)||o.type==='extra_hours_wfh')) delete o.type; if(!o.leaveType&&!o.type&&!o.accomType){delete state.overrides[selectedDate][agentId]; if(!Object.keys(state.overrides[selectedDate]).length) delete state.overrides[selectedDate];} saveState();render(); }
+  function clearAccomOverride(agentId){ const o=state.overrides[selectedDate]?.[agentId]; if(!o) return; delete o.accomType; delete o.accomNote; if(o.type&&ACCOM_TYPES.includes(o.type)) delete o.type; if(!o.leaveType&&!o.type&&!o.accomType){delete state.overrides[selectedDate][agentId]; if(!Object.keys(state.overrides[selectedDate]).length) delete state.overrides[selectedDate];} saveState();render(); }
   function clearLeaveOverride(agentId){ const o=state.overrides[selectedDate]?.[agentId]; if(!o) return; delete o.leaveType; if(o.type&&LEAVE_TYPES.includes(o.type)) delete o.type; if(!o.leaveType&&!o.type&&!o.accomType){delete state.overrides[selectedDate][agentId]; if(!Object.keys(state.overrides[selectedDate]).length) delete state.overrides[selectedDate];} saveState();render(); }
   function clearAllOverridesForDay(){ if(!state.overrides[selectedDate]){alert('No overrides on this day.');return;} if(!confirm('Clear all overrides for this day?')) return; delete state.overrides[selectedDate]; saveState();render(); }
-
-  // ---- Pending Requests ----
-  function renderPending(){
-    populateSelect('pendingSupervisor',pendingSupervisorFilter); document.getElementById('pendingSupervisor').value=pendingSupervisorFilter||'';
-    let visible=pendingRequests.filter(r=>pendingFilter==='pending'?r.status==='pending':true);
-    if(pendingSupervisorFilter) visible=visible.filter(r=>r.agent_supervisor===pendingSupervisorFilter);
-    const pending=visible.filter(r=>r.status==='pending'); const decided=visible.filter(r=>['approved','denied','cancelled'].includes(r.status));
-    const list=document.getElementById('pendingList'); const history=document.getElementById('pendingHistory');
-    list.innerHTML=pending.length===0?'<div class="empty">No pending requests — you\'re caught up.</div>':pending.map(r=>renderRequestCard(r,true)).join('');
-    list.querySelectorAll('[data-approve]').forEach(b=>b.addEventListener('click',()=>approveRequest(b.dataset.approve)));
-    list.querySelectorAll('[data-deny]').forEach(b=>b.addEventListener('click',()=>denyRequest(b.dataset.deny)));
-    history.innerHTML=(pendingFilter==='all'&&decided.length)?'<h3>Recent decisions</h3>'+decided.slice(-30).reverse().map(r=>renderRequestCard(r,false)).join(''):'';
-  }
-
-  function renderRequestCard(r,withActions){
-    const agent=state.agents.find(a=>a.name===r.agent_name);
-    const typeLabel=STATUSES[r.request_type]?.label||(r.request_type||'').replace(/_/g,' ');
-    const dateStr=new Date(r.request_date+'T00:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-    const lastMin=isLastMinuteRequest(r)&&ACCOM_TYPES.includes(r.request_type);
-    let warnings='';
-    if(withActions&&agent){
-      if(r.request_type==='accom_wfh'){ const[s,e]=[startOfWeek(r.request_date),endOfWeek(r.request_date)]; let used=0; Object.keys(state.overrides).forEach(d=>{if(d>=s&&d<=e&&state.overrides[d][agent.id]?.type==='accom_wfh') used++;}); if(used>=state.settings.flexLimitPerWeek) warnings+=`<div class="req-warn">Per-agent weekly cap reached (${state.settings.flexLimitPerWeek}/wk). You can still approve.</div>`; }
-      if(r.request_type==='extra_hours_wfh'){ const bal=balanceForAgent(agent.name); if(bal<1) warnings+=`<div class="req-warn">No Extra Hours credits (balance: ${formatBalance(bal)})</div>`; else warnings+=`<div class="req-warn ok">${formatBalance(bal)} credit(s) available — approval deducts 1.</div>`; }
-      if(r.request_type==='ot_claim'){ const ageDays=(new Date(todayISO())-new Date(r.request_date))/86400000; if(ageDays>state.settings.otCutoffDays) warnings+=`<div class="req-warn">Claim is ${Math.round(ageDays)} days after date worked (cutoff: ${state.settings.otCutoffDays} days).</div>`; const lv=getManualLeaves().find(l=>l.agent_name===r.agent_name&&r.request_date>=l.start_date&&r.request_date<=l.end_date); if(lv) warnings+=`<div class="req-warn danger">Date overlaps logged ${lv.leave_type.toUpperCase()} leave.</div>`; }
-      if(r.request_type==='accom_general'&&r.reason) warnings+=`<div class="req-warn ok">Note: ${escapeHtml(r.reason)}</div>`;
-      if(lastMin) warnings+=`<div class="req-warn">Last-minute submission (within 24h of requested date).</div>`;
-    }
-    const statusBadge=r.status==='approved'?'<span class="pill ok">Approved</span>':r.status==='denied'?'<span class="pill danger">Denied</span>':r.status==='cancelled'?'<span class="pill" style="background:#f3f4f6;color:#6b7280">Cancelled</span>':'';
-    const detailLines=r.request_type==='ot_claim'?`<p style="margin:0 0 4px;font-size:13px"><strong>OT:</strong> ${r.ot_start_time||'—'} to ${r.ot_end_time||'—'} (${r.ot_hours||'?'} hrs)</p>${r.ot_purpose?`<p style="margin:0 0 4px;font-size:13px">Purpose: ${escapeHtml(r.ot_purpose)}</p>`:''}`:`${r.reason?`<p style="margin:0 0 4px;font-size:13px">${escapeHtml(r.reason)}</p>`:''}${r.coverage?`<p style="margin:0;font-size:12px;color:var(--muted)">Coverage: ${escapeHtml(r.coverage)}</p>`:''}`;
-    return `<div class="request-card type-${r.request_type}"><div class="req-row"><div class="req-info"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span class="req-name">${escapeHtml(r.agent_name)}</span><span class="req-meta">${escapeHtml(r.agent_supervisor||'')}${r.agent_team?' · '+escapeHtml(r.agent_team):''}</span>${statusBadge}${lastMin?'<span class="last-minute-flag">Last-min</span>':''}</div><div class="req-type-row"><span class="req-pill ${r.request_type}">${typeLabel}</span><span style="font-size:13px">${dateStr}</span><span style="font-size:12px;color:var(--muted)">· ${timeAgo(r.created_at)}</span></div>${warnings}${detailLines}${r.decision_note?`<p style="margin:6px 0 0;font-size:12px;color:var(--muted)"><em>Note: ${escapeHtml(r.decision_note)}</em></p>`:''}</div>${withActions?`<div class="req-actions"><button class="btn-approve" data-approve="${r.id}">Approve</button><button class="btn-danger" data-deny="${r.id}">Deny</button></div>`:''}</div></div>`;
-  }
-
-  async function approveRequest(id){
-    const req=pendingRequests.find(r=>r.id===id); if(!req) return;
-    const agent=state.agents.find(a=>a.name===req.agent_name);
-    if(!agent){alert(`Agent "${req.agent_name}" not found.`);return;}
-    if(req.request_type==='ot_claim'){ const hpc=state.settings.hoursPerCredit||4; await addLedgerEntry(req.agent_name,'earn',{hours:req.ot_hours,credits:(Number(req.ot_hours)||0)/hpc,dateWorked:req.request_date,requestId:req.id,note:req.ot_purpose||''});
-    } else if(req.request_type==='extra_hours_wfh'){ if(balanceForAgent(agent.name)>=1) await addLedgerEntry(req.agent_name,'redeem',{credits:1,dateWorked:req.request_date,requestId:req.id}); if(!state.overrides[req.request_date]) state.overrides[req.request_date]={}; const eo=state.overrides[req.request_date][agent.id]||{}; state.overrides[req.request_date][agent.id]={...eo,accomType:'extra_hours_wfh',source:'request',requestId:req.id}; saveState();
-    } else { if(!state.overrides[req.request_date]) state.overrides[req.request_date]={}; const eo=state.overrides[req.request_date][agent.id]||{}; state.overrides[req.request_date][agent.id]={...eo,accomType:req.request_type,source:'request',requestId:req.id,accomNote:req.reason||null}; saveState(); }
-    try{ await supabase.from('requests').update({status:'approved',decided_by:'supervisor',decided_at:new Date().toISOString()}).eq('id',id); } catch(e){}
-    selectedDate=req.request_date; activeTab='daily';
-    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='daily'));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-daily'));
-    renderDaily(); fetchAllSupabase();
-  }
-  async function denyRequest(id){ const note=prompt('Optional reason:','')||''; try{ const{error}=await supabase.from('requests').update({status:'denied',decided_by:'supervisor',decided_at:new Date().toISOString(),decision_note:note||null}).eq('id',id); if(error){alert('Could not deny: '+error.message);return;} } catch(e){alert('Error: '+e.message);return;} await fetchAllSupabase(); }
 
   // ---- Leave ----
   function renderLeave(){
@@ -891,32 +733,34 @@
     if(!usageFrom) usageFrom=addDays(todayISO(),-29); if(!usageTo) usageTo=todayISO();
     document.getElementById('usageFrom').value=usageFrom; document.getElementById('usageTo').value=usageTo;
     const agents=state.agents.filter(a=>!usageSupervisor||a.supervisor===usageSupervisor);
-    const rows=agents.map(a=>{const u=countUsesInRange(a,usageFrom,usageTo); const earned=ledgerEntries.filter(l=>l.agent_name===a.name&&l.entry_type==='earn'&&l.date_worked>=usageFrom&&l.date_worked<=usageTo).reduce((s,l)=>s+(Number(l.hours)||0),0); const total=u.accom_wfh+u.accom_early+u.accom_late+u.accom_office_change+u.accom_general; return{id:a.id,name:a.name,supervisor:a.supervisor||'',team:a.team||'',...u,total,earned,balance:balanceForAgent(a.name)};}).sort((a,b)=>b.total-a.total);
+    const rows=agents.map(a=>{const u=countUsesInRange(a,usageFrom,usageTo); const total=u.accom_wfh+u.accom_early+u.accom_late+u.accom_office_change+u.accom_general; return{id:a.id,name:a.name,supervisor:a.supervisor||'',team:a.team||'',...u,total};}).sort((a,b)=>b.total-a.total);
     const top=rows.filter(r=>r.total>0).slice(0,30);
     if(chartUsage) chartUsage.destroy();
     if(top.length===0){const el=document.getElementById('usageChart');if(el) el.parentElement.innerHTML='<div class="empty">No accommodations logged in this date range.</div>';}
     else{ chartUsage=new Chart(document.getElementById('usageChart').getContext('2d'),{type:'bar',data:{labels:top.map(r=>r.name),datasets:[{label:'WFH accommodation',data:top.map(r=>r.accom_wfh),backgroundColor:'#f59e0b'},{label:'Came in early',data:top.map(r=>r.accom_early),backgroundColor:'#8b5cf6'},{label:'Stayed late',data:top.map(r=>r.accom_late),backgroundColor:'#ec4899'},{label:'Office day swap',data:top.map(r=>r.accom_office_change),backgroundColor:'#06b6d4'},{label:'General',data:top.map(r=>r.accom_general||0),backgroundColor:'#84cc16'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{x:{stacked:true,ticks:{font:{size:10},maxRotation:60,minRotation:45}},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}}); }
     renderSubmissionTable();
     const t=document.getElementById('usageTable');
-    t.innerHTML=`<thead><tr><th colspan="7" style="text-align:center;background:#fff7ed;color:#9a3412">Accommodations</th><th colspan="3" style="text-align:center;background:#f0fdfa;color:#0f766e">Extra Hours</th></tr><tr><th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">General</th><th class="num">Total</th><th class="num">Extra Hrs used</th><th class="num">OT hrs earned</th><th class="num">Bank</th></tr></thead><tbody>${rows.length===0?'<tr><td colspan="10" class="empty">No data.</td></tr>':rows.map(r=>{const flag=r.total>=5?'danger':r.total>=3?'warn':'ok';return`<tr><td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td><td>${escapeHtml(r.supervisor)}</td><td class="num">${r.accom_wfh||''}</td><td class="num">${r.accom_early||''}</td><td class="num">${r.accom_late||''}</td><td class="num">${r.accom_general||''}</td><td class="num"><span class="pill ${flag}">${r.total}</span></td><td class="num">${r.extra_hours_wfh||''}</td><td class="num">${r.earned||''}</td><td class="num">${formatBalance(r.balance)}</td></tr>`;}).join('')}</tbody>`;
+    t.innerHTML=`<thead><tr><th>Agent</th><th>Supervisor</th><th class="num">WFH</th><th class="num">Early</th><th class="num">Late</th><th class="num">Office swap</th><th class="num">General</th><th class="num">Total</th></tr></thead><tbody>${rows.length===0?'<tr><td colspan="8" class="empty">No data.</td></tr>':rows.map(r=>{const flag=r.total>=5?'danger':r.total>=3?'warn':'ok';return`<tr><td><strong>${escapeHtml(r.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(r.team)}</div></td><td>${escapeHtml(r.supervisor)}</td><td class="num">${r.accom_wfh||''}</td><td class="num">${r.accom_early||''}</td><td class="num">${r.accom_late||''}</td><td class="num">${r.accom_office_change||''}</td><td class="num">${r.accom_general||''}</td><td class="num"><span class="pill ${flag}">${r.total}</span></td></tr>`;}).join('')}</tbody>`;
   }
-  function renderSubmissionTable(){ const t=document.getElementById('submissionTable'); if(!t) return; const fromAgents=pendingRequests.filter(r=>ACCOM_TYPES.includes(r.request_type)).map(r=>({...r,submitted_by:r.submitted_by||'agent'})); const fromSups=(state.submissions||[]).filter(s=>ACCOM_TYPES.includes(s.request_type)); const all=[...fromAgents,...fromSups].filter(r=>(!usageSupervisor||r.agent_supervisor===usageSupervisor)&&r.request_date>=usageFrom&&r.request_date<=usageTo).sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')); if(!all.length){t.innerHTML='<tbody><tr><td class="empty">No accommodation submissions in this date range.</td></tr></tbody>';return;} t.innerHTML=`<thead><tr><th>Agent</th><th>Supervisor</th><th>Type</th><th>Date</th><th>Submitted</th><th>By</th><th>Status</th><th>Note</th><th>Last-min?</th></tr></thead><tbody>${all.map(r=>{const lm=isLastMinuteRequest(r);const sc=r.status==='approved'?'ok':r.status==='denied'?'danger':'warn';return`<tr><td><strong>${escapeHtml(r.agent_name)}</strong></td><td>${escapeHtml(r.agent_supervisor||'')}</td><td>${escapeHtml(STATUSES[r.request_type]?.label||r.request_type)}</td><td>${escapeHtml(r.request_date||'')}</td><td style="font-size:12px;color:var(--muted)">${escapeHtml((r.created_at||'').slice(0,16).replace('T',' '))}</td><td style="font-size:12px">${r.submitted_by==='supervisor'?'Supervisor':'Agent'}</td><td><span class="pill ${sc}">${escapeHtml(r.status||'pending')}</span></td><td style="font-size:12px;color:var(--muted)">${escapeHtml(r.reason||'')}</td><td>${lm?'<span class="last-minute-flag">Last-min</span>':'<span style="color:var(--muted)">—</span>'}</td></tr>`;}).join('')}</tbody>`; }
-  function countUsesInRange(agent,fromISO,toISO){ const c={accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0,extra_hours_wfh:0}; Object.keys(state.overrides).forEach(date=>{ if(date<fromISO||date>toISO) return; const o=state.overrides[date][agent.id]; if(!o) return; const t=o.accomType||(ACCOM_TYPES.includes(o.type)||o.type==='extra_hours_wfh'?o.type:null); if(t&&c[t]!==undefined) c[t]++; }); return c; }
-  function exportUsageCSV(){ const rows=[['Agent','Supervisor','Team','Accom WFH','Accom Early','Accom Late','Office swap','General','Total','Extra Hrs used','OT Hrs earned','Bank Balance']]; state.agents.forEach(a=>{ if(usageSupervisor&&a.supervisor!==usageSupervisor) return; const c=countUsesInRange(a,usageFrom,usageTo); const earned=ledgerEntries.filter(l=>l.agent_name===a.name&&l.entry_type==='earn'&&l.date_worked>=usageFrom&&l.date_worked<=usageTo).reduce((s,l)=>s+(Number(l.hours)||0),0); const total=c.accom_wfh+c.accom_early+c.accom_late+c.accom_office_change+c.accom_general; rows.push([a.name,a.supervisor||'',a.team||'',c.accom_wfh,c.accom_early,c.accom_late,c.accom_office_change,c.accom_general,total,c.extra_hours_wfh,earned,formatBalance(balanceForAgent(a.name))]); }); const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`accommodation-usage-${usageFrom}-to-${usageTo}.csv`;a.click();URL.revokeObjectURL(a.href); }
 
-  // ---- Bank ----
-  function renderBank(){ populateSelect('bankSupervisor',bankSupervisor); let agents=state.agents.slice(); if(bankSearch) agents=agents.filter(a=>a.name.toLowerCase().includes(bankSearch.toLowerCase())); if(bankSupervisor) agents=agents.filter(a=>a.supervisor===bankSupervisor); agents.sort((a,b)=>balanceForAgent(b.name)-balanceForAgent(a.name)||a.name.localeCompare(b.name)); const expired=todayISO()>state.settings.extraExpiry; const t=document.getElementById('bankTable'); t.innerHTML=`<thead><tr><th>Agent</th><th>Supervisor</th><th class="num">Earned (hrs)</th><th class="num">Redeemed</th><th class="num">Balance</th><th>Expires</th><th></th></tr></thead><tbody>${agents.map(a=>{ const ents=[...ledgerEntries,...(state.localLedger||[])].filter(e=>e.agent_name===a.name); const earned=ents.filter(e=>e.entry_type==='earn').reduce((s,e)=>s+(Number(e.hours)||0),0); const redeemed=ents.filter(e=>e.entry_type==='redeem').reduce((s,e)=>s+(Number(e.credits)||1),0); const bal=balanceForAgent(a.name); return`<tr><td><strong>${escapeHtml(a.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(a.team||'')}</div></td><td>${escapeHtml(a.supervisor||'')}</td><td class="num">${earned||''}</td><td class="num">${redeemed||''}</td><td class="num"><span class="pill bank">${formatBalance(bal)}</span></td><td style="font-size:12px;color:${expired?'var(--danger)':'var(--muted)'}">${state.settings.extraExpiry}${expired?' (EXPIRED)':''}</td><td><button class="btn-ghost" data-bank-log="${escapeAttr(a.name)}">View ledger</button></td></tr>`; }).join('')}</tbody>`; t.querySelectorAll('[data-bank-log]').forEach(b=>b.addEventListener('click',()=>openBankModal(b.dataset.bankLog))); }
-  function openBankModal(name){ document.getElementById('bankModalTitle').textContent=`${name} — Extra Hours Ledger`; const log=[...ledgerEntries,...(state.localLedger||[])].filter(e=>e.agent_name===name).slice().sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')); const earned=log.filter(e=>e.entry_type==='earn').reduce((s,e)=>s+(Number(e.hours)||0),0); const redeemed=log.filter(e=>e.entry_type==='redeem').reduce((s,e)=>s+(Number(e.credits)||1),0); const bal=balanceForAgent(name); document.getElementById('bankModalBody').innerHTML=`<div style="display:flex;gap:10px;margin-bottom:14px;"><div class="stat extra" style="flex:1"><div class="label">Earned (hrs)</div><div class="value">${earned}</div></div><div class="stat extra" style="flex:1"><div class="label">Redeemed</div><div class="value">${redeemed}</div></div><div class="stat extra" style="flex:1"><div class="label">Balance</div><div class="value">${formatBalance(bal)}</div></div></div><div style="margin-bottom:10px;font-size:12px;color:var(--muted)">All credits expire <strong>${state.settings.extraExpiry}</strong>.</div><div style="margin-bottom:10px"><button class="btn-primary" id="manualAdjustBtn">Manual adjustment</button></div><div>${log.length===0?'<div class="empty">No entries yet.</div>':log.map(e=>{const sign=e.entry_type==='earn'?'+':e.entry_type==='redeem'?'−':'±'; const amt=e.entry_type==='earn'?`${Number(e.hours)||0} hrs`:e.entry_type==='redeem'?`${Number(e.credits)||1} credit`:`${Number(e.credits)||0} credits`; return`<div class="leave-list-item"><div><div><strong>${sign} ${amt}</strong> · ${e.entry_type}</div><div style="font-size:12px;color:var(--muted)">${e.date_worked||(e.created_at||'').slice(0,10)}${e.note?' · '+escapeHtml(e.note):''}${e.approved_by?' · approved by '+escapeHtml(e.approved_by):''}</div></div></div>`; }).join('')}</div>`; document.getElementById('manualAdjustBtn').addEventListener('click',()=>promptManualAdjustment(name)); document.getElementById('bankModal').classList.add('show'); }
-  async function promptManualAdjustment(name){ const credits=parseFloat(prompt('Adjustment in credits:','0')); if(!credits||isNaN(credits)) return; const note=prompt('Reason (required):','')||''; if(!note){alert('Reason required.');return;} await addLedgerEntry(name,'adjustment',{credits,note}); openBankModal(name);renderBank(); }
+  function renderSubmissionTable(){ const t=document.getElementById('submissionTable'); if(!t) return; const all=(state.submissions||[]).filter(s=>ACCOM_TYPES.includes(s.request_type)&&(!usageSupervisor||s.agent_supervisor===usageSupervisor)&&s.request_date>=usageFrom&&s.request_date<=usageTo).sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')); if(!all.length){t.innerHTML='<tbody><tr><td class="empty">No accommodation submissions in this date range.</td></tr></tbody>';return;} t.innerHTML=`<thead><tr><th>Agent</th><th>Supervisor</th><th>Type</th><th>Date</th><th>Submitted</th><th>Note</th><th>Last-min?</th></tr></thead><tbody>${all.map(r=>{const lm=isLastMinuteRequest(r);return`<tr><td><strong>${escapeHtml(r.agent_name)}</strong></td><td>${escapeHtml(r.agent_supervisor||'')}</td><td>${escapeHtml(STATUSES[r.request_type]?.label||r.request_type)}</td><td>${escapeHtml(r.request_date||'')}</td><td style="font-size:12px;color:var(--muted)">${escapeHtml((r.created_at||'').slice(0,16).replace('T',' '))}</td><td style="font-size:12px;color:var(--muted)">${escapeHtml(r.reason||'')}</td><td>${lm?'<span class="last-minute-flag">Last-min</span>':'<span style="color:var(--muted)">—</span>'}</td></tr>`;}).join('')}</tbody>`; }
+
+  function countUsesInRange(agent,fromISO,toISO){ const c={accom_wfh:0,accom_early:0,accom_late:0,accom_office_change:0,accom_general:0}; Object.keys(state.overrides).forEach(date=>{ if(date<fromISO||date>toISO) return; const o=state.overrides[date][agent.id]; if(!o) return; const t=o.accomType||(ACCOM_TYPES.includes(o.type)?o.type:null); if(t&&c[t]!==undefined) c[t]++; }); return c; }
+
+  function exportUsageCSV(){ const rows=[['Agent','Supervisor','Team','Accom WFH','Accom Early','Accom Late','Office swap','General','Total']]; state.agents.forEach(a=>{ if(usageSupervisor&&a.supervisor!==usageSupervisor) return; const c=countUsesInRange(a,usageFrom,usageTo); const total=c.accom_wfh+c.accom_early+c.accom_late+c.accom_office_change+c.accom_general; rows.push([a.name,a.supervisor||'',a.team||'',c.accom_wfh,c.accom_early,c.accom_late,c.accom_office_change,c.accom_general,total]); }); const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`accommodation-usage-${usageFrom}-to-${usageTo}.csv`;a.click();URL.revokeObjectURL(a.href); }
 
   // ---- Schedule ----
   function buildDays(start,period){ if(period==='day') return[start]; if(period==='week'){const d=new Date(start+'T00:00:00');d.setDate(d.getDate()-d.getDay());const ss=isoFromDate(d);return[0,1,2,3,4,5,6].map(i=>addDays(ss,i));} const[y,m]=start.split('-').map(Number);const last=new Date(y,m,0).getDate();const days=[];for(let dd=1;dd<=last;dd++) days.push(`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);return days; }
+
   function renderSchedule(){ document.getElementById('schedDate').value=schedStart; populateSelect('schedSupervisor',schedSupervisor); document.getElementById('schedSort').value=schedSort; document.querySelectorAll('#periodToggle button').forEach(b=>b.classList.toggle('active',b.dataset.period===schedPeriod)); const days=buildDays(schedStart,schedPeriod); const today=todayISO(); let agents=state.agents.slice(); if(schedSearch) agents=agents.filter(a=>a.name.toLowerCase().includes(schedSearch.toLowerCase())); if(schedSupervisor) agents=agents.filter(a=>a.supervisor===schedSupervisor); if(schedSort==='name') agents.sort((a,b)=>a.name.localeCompare(b.name)); else if(schedSort==='supervisor') agents.sort((a,b)=>(a.supervisor||'').localeCompare(b.supervisor||'')||a.name.localeCompare(b.name)); else{const tr=t=>{const i=TEAM_ORDER.indexOf(t);return i===-1?99:i;};agents.sort((a,b)=>tr(a.team||'')-tr(b.team||'')||(a.team||'').localeCompare(b.team||'')||a.name.localeCompare(b.name));} document.getElementById('schedTable').innerHTML=`<div class="sched-cards period-${schedPeriod}">${days.map(date=>renderDayCard(date,agents,today)).join('')}</div>`; document.querySelectorAll('#schedTable .agent-name-row[data-date],.day-card-date[data-date]').forEach(el=>el.addEventListener('click',()=>{selectedDate=el.dataset.date;activeTab='daily';document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='daily'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-daily'));render();})); }
-  function renderDayCard(date,agents,today){ const d=new Date(date+'T00:00:00');const dow=d.getDay();const isToday=date===today;const isWknd=dow===0||dow===6;const dayLabel=d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});const buckets={office:[],wfh:[],accom:[],extra:[],pto:[],jiffy:[],halfjiffy:[],unpaid:[],off:[]}; agents.forEach(a=>{const s=statusForDate(a,date);if(s==='office'||s==='accom_office_change') buckets.office.push({a,s});else if(s==='wfh') buckets.wfh.push({a,s});else if(['accom_wfh','accom_early','accom_late','accom_general'].includes(s)) buckets.accom.push({a,s});else if(s==='extra_hours_wfh') buckets.extra.push({a,s});else if(s==='pto') buckets.pto.push({a,s});else if(s==='jiffy_day') buckets.jiffy.push({a,s});else if(s==='half_jiffy') buckets.halfjiffy.push({a,s});else if(s==='unpaid') buckets.unpaid.push({a,s});else buckets.off.push({a,s});}); const scheduled=agents.filter(a=>(a.schedule[dow]||'off')!=='off').length;const onLeave=buckets.pto.length+buckets.jiffy.length+buckets.halfjiffy.length+buckets.unpaid.length;const working=scheduled-onLeave;const cov=scheduled===0?null:Math.round(100*working/scheduled);const covCls=cov===null?'':cov>=state.settings.coverageGreen?'good':cov>=state.settings.coverageAmber?'ok':'bad'; const sec=(label,swatchCls,items)=>{if(!items.length) return '';return`<div class="status-section"><div class="status-section-head"><span class="label"><span class="swatch s-${swatchCls}"></span>${label}</span><span class="count">${items.length}</span></div><div class="agent-names">${items.map(({a,s})=>{const note=state.overrides[date]?.[a.id]?.accomNote||state.overrides[date]?.[a.id]?.note;const late=state.overrides[date]?.[a.id]?.lateRequest;const tag=['accom_wfh','accom_early','accom_late','accom_general'].includes(s)?` <span class="tag">${escapeHtml(note||STATUSES[s].short.replace('Accom ',''))}</span>`:'';const lateTag=late?` <span class="tag" style="background:#f97316;color:white;border-radius:3px;padding:1px 4px;font-size:9px">⚡</span>`:'';return`<div class="agent-name-row" data-date="${date}">${escapeHtml(a.name)}${tag}${lateTag}</div>`;}).join('')}</div></div>`;}; return`<div class="day-card ${isToday?'today':''} ${isWknd?'weekend':''}"><div class="day-card-head"><div class="day-card-date" data-date="${date}">${dayLabel}</div>${cov===null?'':`<div class="day-card-cov cov-${covCls}">${cov}%</div>`}</div><div class="day-card-summary"><b>${working}</b>/${scheduled} working · <b>${buckets.office.length}</b> office · <b>${buckets.wfh.length+buckets.accom.length+buckets.extra.length}</b> WFH${onLeave?' · <b>'+onLeave+'</b> on leave':''}</div>${sec('In Office','office',buckets.office)}${sec('Regular WFH','wfh',buckets.wfh)}${sec('Accommodations','accom',buckets.accom)}${sec('Extra Hrs WFH','extra',buckets.extra)}${sec('PTO','pto',buckets.pto)}${sec('Jiffy Day','jiffy',buckets.jiffy)}${sec('Half Jiffy','halfjiffy',buckets.halfjiffy)}${sec('Unpaid','unpaid',buckets.unpaid)}${sec('Day Off','off',buckets.off)}${Object.values(buckets).every(b=>!b.length)?'<div class="day-card-empty">No agents</div>':''}</div>`; }
+
+  function renderDayCard(date,agents,today){ const d=new Date(date+'T00:00:00');const dow=d.getDay();const isToday=date===today;const isWknd=dow===0||dow===6;const dayLabel=d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});const buckets={office:[],wfh:[],accom:[],pto:[],jiffy:[],halfjiffy:[],unpaid:[],off:[]}; agents.forEach(a=>{const s=statusForDate(a,date);if(s==='office'||s==='accom_office_change') buckets.office.push({a,s});else if(s==='wfh') buckets.wfh.push({a,s});else if(['accom_wfh','accom_early','accom_late','accom_general'].includes(s)) buckets.accom.push({a,s});else if(s==='pto') buckets.pto.push({a,s});else if(s==='jiffy_day') buckets.jiffy.push({a,s});else if(s==='half_jiffy') buckets.halfjiffy.push({a,s});else if(s==='unpaid') buckets.unpaid.push({a,s});else buckets.off.push({a,s});}); const scheduled=agents.filter(a=>(a.schedule[dow]||'off')!=='off').length;const onLeave=buckets.pto.length+buckets.jiffy.length+buckets.halfjiffy.length+buckets.unpaid.length;const working=scheduled-onLeave;const cov=scheduled===0?null:Math.round(100*working/scheduled);const covCls=cov===null?'':cov>=state.settings.coverageGreen?'good':cov>=state.settings.coverageAmber?'ok':'bad'; const sec=(label,swatchCls,items)=>{if(!items.length) return '';return`<div class="status-section"><div class="status-section-head"><span class="label"><span class="swatch s-${swatchCls}"></span>${label}</span><span class="count">${items.length}</span></div><div class="agent-names">${items.map(({a,s})=>{const note=state.overrides[date]?.[a.id]?.accomNote||state.overrides[date]?.[a.id]?.note;const late=state.overrides[date]?.[a.id]?.lateRequest;const tag=['accom_wfh','accom_early','accom_late','accom_general'].includes(s)?` <span class="tag">${escapeHtml(note||STATUSES[s].short.replace('Accom ',''))}</span>`:'';const lateTag=late?` <span class="tag" style="background:#f97316;color:white;border-radius:3px;padding:1px 4px;font-size:9px">⚡</span>`:'';return`<div class="agent-name-row" data-date="${date}">${escapeHtml(a.name)}${tag}${lateTag}</div>`;}).join('')}</div></div>`;}; return`<div class="day-card ${isToday?'today':''} ${isWknd?'weekend':''}"><div class="day-card-head"><div class="day-card-date" data-date="${date}">${dayLabel}</div>${cov===null?'':`<div class="day-card-cov cov-${covCls}">${cov}%</div>`}</div><div class="day-card-summary"><b>${working}</b>/${scheduled} working · <b>${buckets.office.length}</b> office · <b>${buckets.wfh.length+buckets.accom.length}</b> WFH${onLeave?' · <b>'+onLeave+'</b> on leave':''}</div>${sec('In Office','office',buckets.office)}${sec('Regular WFH','wfh',buckets.wfh)}${sec('Accommodations','accom',buckets.accom)}${sec('PTO','pto',buckets.pto)}${sec('Jiffy Day','jiffy',buckets.jiffy)}${sec('Half Jiffy','halfjiffy',buckets.halfjiffy)}${sec('Unpaid','unpaid',buckets.unpaid)}${sec('Day Off','off',buckets.off)}${Object.values(buckets).every(b=>!b.length)?'<div class="day-card-empty">No agents</div>':''}</div>`; }
 
   // ---- Coverage Heatmap ----
   function renderCoverage(){ document.getElementById('covDate').value=covStart; populateSelect('covSupervisor',covSupervisor); document.querySelectorAll('#covPeriodToggle button').forEach(b=>b.classList.toggle('active',b.dataset.period===covPeriod)); const today=todayISO(); const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; let displayDays; if(covPeriod==='day') displayDays=[covStart]; else if(covPeriod==='week'){const d=new Date(covStart+'T00:00:00');d.setDate(d.getDate()-d.getDay());const ss=isoFromDate(d);displayDays=[0,1,2,3,4,5,6].map(i=>addDays(ss,i));}else{const[y,m]=covStart.split('-').map(Number);const last=new Date(y,m,0).getDate();displayDays=[];for(let dd=1;dd<=last;dd++) displayDays.push(`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);} let agents=state.agents.slice();if(covSupervisor) agents=agents.filter(a=>a.supervisor===covSupervisor); const slots=[];for(let h=6;h<=19;h++){slots.push({value:h,label:`${String(h).padStart(2,'0')}:00`,onHour:true});if(h<20) slots.push({value:h+0.5,label:`${String(h).padStart(2,'0')}:30`,onHour:false});} const matrix=slots.map(slot=>displayDays.map(date=>{const dow=new Date(date+'T00:00:00').getDay();let count=0;agents.forEach(a=>{const sh=SHIFT_HOURS[a.team];if(!sh) return;if(slot.value<sh.start||slot.value>=sh.end) return;if((a.schedule[dow]||'off')==='off') return;if(!LEAVE_TYPES.includes(statusForDate(a,date))) count++;});return count;})); const max=Math.max(1,...matrix.flat()); let html='<div class="staff-heatmap-wrap"><div class="staff-heatmap-title">Total staffed by time slot<div class="legend">Light = fewer<span class="scale"><span style="background:hsl(213,85%,95%)"></span><span style="background:hsl(213,85%,80%)"></span><span style="background:hsl(213,85%,65%)"></span><span style="background:hsl(213,85%,50%)"></span><span style="background:hsl(213,85%,40%)"></span></span>Dark = more (peak: '+max+')</div></div><div class="staff-heatmap-overflow"><table class="staff-heatmap"><thead><tr><th class="time-col">Time</th>'; displayDays.forEach(date=>{const d=new Date(date+'T00:00:00');html+=`<th class="day-col ${date===today?'today':''}">${dowNames[d.getDay()]}<div class="date-sub">${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div></th>`;});html+='</tr></thead><tbody>'; slots.forEach((slot,si)=>{html+=`<tr class="${slot.onHour&&si>0?'boundary':''}"><td class="time-col">${slot.label}</td>`;displayDays.forEach((date,di)=>{const count=matrix[si][di];if(!count){html+=`<td class="staff-cell empty">—</td>`;}else{const ratio=count/max;const lightness=Math.round(95-ratio*55);const fontColor=ratio>0.5?'white':'#1e3a8a';html+=`<td class="staff-cell" style="background:hsl(213,85%,${lightness}%);color:${fontColor}" data-date="${date}" data-slot="${slot.label}" data-slot-value="${slot.value}">${count}</td>`;}}); html+='</tr>';}); html+='</tbody></table></div></div>'; document.getElementById('covContainer').innerHTML=html; document.querySelectorAll('#covContainer .staff-cell[data-date]').forEach(el=>el.addEventListener('click',()=>showCoverageDetail(el.dataset.date,el.dataset.slot,parseFloat(el.dataset.slotValue)))); }
+
   function showCoverageDetail(date,slotLabel,slotValue){ let agents=state.agents.slice();if(covSupervisor) agents=agents.filter(a=>a.supervisor===covSupervisor);const dow=new Date(date+'T00:00:00').getDay();const staffed=[],missing=[];agents.forEach(a=>{const sh=SHIFT_HOURS[a.team];if(!sh) return;if(slotValue<sh.start||slotValue>=sh.end) return;if((a.schedule[dow]||'off')==='off') return;const s=statusForDate(a,date);if(LEAVE_TYPES.includes(s)) missing.push({a,s});else staffed.push({a,s});});const dl=new Date(date+'T00:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});document.getElementById('covDetailTitle').textContent=`${dl} at ${slotLabel} — ${staffed.length} staffed · ${missing.length} missing`;const renderList=(items,emptyMsg)=>items.length===0?`<div class="empty" style="padding:14px">${emptyMsg}</div>`:items.map(({a,s})=>`<div class="leave-list-item"><div><strong>${escapeHtml(a.name)}</strong><div style="font-size:11px;color:var(--muted)">${escapeHtml(a.supervisor||'')} · ${escapeHtml(a.team||'')}</div></div><span class="status-pill ${STATUSES[s]?.class||'off'}" style="display:inline-flex;padding:3px 9px;font-size:11px">${STATUSES[s]?.label||s}</span></div>`).join('');document.getElementById('covDetailBody').innerHTML=`<h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px">Staffed (${staffed.length})</h3>${renderList(staffed,'No one staffed.')}<h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 8px">Missing — on leave (${missing.length})</h3>${renderList(missing,'No one missing.')}`;document.getElementById('covDetailModal').classList.add('show'); }
+
   function shiftCov(d){ if(covPeriod==='day') covStart=addDays(covStart,d);else if(covPeriod==='week') covStart=addDays(covStart,d*7);else{const[y,m]=covStart.split('-').map(Number);covStart=isoFromDate(new Date(y,m-1+d,1));}renderCoverage(); }
   function shiftSched(d){ if(schedPeriod==='day') schedStart=addDays(schedStart,d);else if(schedPeriod==='week') schedStart=addDays(schedStart,d*7);else{const[y,m]=schedStart.split('-').map(Number);schedStart=isoFromDate(new Date(y,m-1+d,1));}renderSchedule(); }
 
@@ -930,13 +774,11 @@
     if(activeTab==='daily')    renderDaily();
     if(activeTab==='monthly')  renderSchedule();
     if(activeTab==='coverage') renderCoverage();
-    if(activeTab==='pending')  renderPending();
     if(activeTab==='leave')    renderLeave();
     if(activeTab==='usage')    renderUsage();
-    if(activeTab==='bank')     renderBank();
   }
 
-  // ---- Wire up all event listeners ----
+  // ---- Event listeners ----
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{ activeTab=t.dataset.tab; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t)); document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===`tab-${activeTab}`)); render(); }));
   document.getElementById('datePicker').addEventListener('change',e=>{selectedDate=e.target.value||todayISO();render();});
   document.getElementById('todayBtn').addEventListener('click',()=>{selectedDate=todayISO();render();});
@@ -959,9 +801,6 @@
   document.getElementById('covNext').addEventListener('click',()=>shiftCov(1));
   document.getElementById('covToday').addEventListener('click',()=>{covStart=todayISO();renderCoverage();});
   document.getElementById('covSupervisor').addEventListener('change',e=>{covSupervisor=e.target.value;renderCoverage();});
-  document.getElementById('refreshPendingBtn').addEventListener('click',fetchAllSupabase);
-  document.getElementById('pendingFilter').addEventListener('change',e=>{pendingFilter=e.target.value;render();});
-  document.getElementById('pendingSupervisor').addEventListener('change',e=>{pendingSupervisorFilter=e.target.value;render();});
   document.getElementById('addLeaveBtn').addEventListener('click',addLeave);
   document.getElementById('leaveListFilter').addEventListener('change',e=>{leaveListFilter=e.target.value;renderLeaveList();});
   document.getElementById('leaveTypeFilter').addEventListener('change',e=>{leaveTypeFilter=e.target.value;renderLeaveList();});
@@ -972,27 +811,21 @@
   document.getElementById('usageQuick90').addEventListener('click',()=>{usageFrom=addDays(todayISO(),-89);usageTo=todayISO();renderUsage();});
   document.getElementById('usageSupervisor').addEventListener('change',e=>{usageSupervisor=e.target.value;renderUsage();});
   document.getElementById('exportUsageBtn').addEventListener('click',exportUsageCSV);
-  document.getElementById('bankSearch').addEventListener('input',e=>{bankSearch=e.target.value;renderBank();});
-  document.getElementById('bankSupervisor').addEventListener('change',e=>{bankSupervisor=e.target.value;renderBank();});
   document.getElementById('editScheduleBtn').addEventListener('click',openScheduleModal);
   document.getElementById('addAgentBtn').addEventListener('click',addAgent);
-  document.getElementById('settingsBtn').addEventListener('click',()=>{ document.getElementById('settingFlexLimit').value=state.settings.flexLimitPerWeek; document.getElementById('settingHoursPerCredit').value=state.settings.hoursPerCredit; document.getElementById('settingOtCutoff').value=state.settings.otCutoffDays; document.getElementById('settingCovGreen').value=state.settings.coverageGreen; document.getElementById('settingCovAmber').value=state.settings.coverageAmber; document.getElementById('settingWeekStart').value=state.settings.weekStart; document.getElementById('settingExtraExpiry').value=state.settings.extraExpiry; document.getElementById('settingsModal').classList.add('show'); });
-  document.getElementById('saveSettings').addEventListener('click',()=>{ state.settings.flexLimitPerWeek=parseInt(document.getElementById('settingFlexLimit').value,10)||1; state.settings.hoursPerCredit=parseFloat(document.getElementById('settingHoursPerCredit').value)||4; state.settings.otCutoffDays=parseInt(document.getElementById('settingOtCutoff').value,10)||14; state.settings.coverageGreen=parseInt(document.getElementById('settingCovGreen').value,10)||95; state.settings.coverageAmber=parseInt(document.getElementById('settingCovAmber').value,10)||85; state.settings.weekStart=parseInt(document.getElementById('settingWeekStart').value,10); state.settings.extraExpiry=document.getElementById('settingExtraExpiry').value||DEFAULT_EXTRA_EXPIRY; saveState(); document.getElementById('settingsModal').classList.remove('show'); render(); });
+  document.getElementById('settingsBtn').addEventListener('click',()=>{ document.getElementById('settingFlexLimit').value=state.settings.flexLimitPerWeek; document.getElementById('settingCovGreen').value=state.settings.coverageGreen; document.getElementById('settingCovAmber').value=state.settings.coverageAmber; document.getElementById('settingWeekStart').value=state.settings.weekStart; document.getElementById('settingsModal').classList.add('show'); });
+  document.getElementById('saveSettings').addEventListener('click',()=>{ state.settings.flexLimitPerWeek=parseInt(document.getElementById('settingFlexLimit').value,10)||1; state.settings.coverageGreen=parseInt(document.getElementById('settingCovGreen').value,10)||95; state.settings.coverageAmber=parseInt(document.getElementById('settingCovAmber').value,10)||85; state.settings.weekStart=parseInt(document.getElementById('settingWeekStart').value,10); saveState(); document.getElementById('settingsModal').classList.remove('show'); render(); });
   document.querySelectorAll('[data-close-modal]').forEach(b=>b.addEventListener('click',()=>b.closest('.modal-backdrop').classList.remove('show')));
   document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m) m.classList.remove('show');}));
   document.getElementById('exportBtn').addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`agent-tracker-${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href); });
   document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
-  document.getElementById('importFile').addEventListener('change',e=>{ const file=e.target.files[0];if(!file) return;const r=new FileReader();r.onload=ev=>{try{const data=JSON.parse(ev.target.result);if(data&&Array.isArray(data.agents)){if(!confirm('Replace current data with imported file?')) return;state=data;if(!state.overrides) state.overrides={};if(!state.settings) state.settings=defaultSettings();if(!Array.isArray(state.manualLeaves)) state.manualLeaves=[];if(!Array.isArray(state.submissions)) state.submissions=[];if(!Array.isArray(state.localLedger)) state.localLedger=[];saveState();render();}else alert('Invalid file.');}catch(err){alert('Could not parse: '+err.message);}};r.readAsText(file);e.target.value=''; });
+  document.getElementById('importFile').addEventListener('change',e=>{ const file=e.target.files[0];if(!file) return;const r=new FileReader();r.onload=ev=>{try{const data=JSON.parse(ev.target.result);if(data&&Array.isArray(data.agents)){if(!confirm('Replace current data with imported file?')) return;state=data;if(!state.overrides) state.overrides={};if(!state.settings) state.settings=defaultSettings();if(!Array.isArray(state.manualLeaves)) state.manualLeaves=[];if(!Array.isArray(state.submissions)) state.submissions=[];saveState();render();}else alert('Invalid file.');}catch(err){alert('Could not parse: '+err.message);}};r.readAsText(file);e.target.value=''; });
 
-  // ============================================================
-  // BOOT  —  pull from Supabase first, then start polling
-  // ============================================================
+  // ---- Boot ----
   loadState().then(loaded => {
     state = loaded;
     render();
-    fetchAllSupabase();
-    setInterval(pollForRemoteChanges, 10000);  // check for remote updates every 10s
-    setInterval(fetchAllSupabase, 30000);       // refresh requests/ledger every 30s
+    setInterval(pollForRemoteChanges, 10000);
   });
 </script>
 </body>
